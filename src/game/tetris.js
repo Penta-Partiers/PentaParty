@@ -16,7 +16,7 @@ function checkCompleteRows(board) {
 
             // If the entire row is filled with 1s, we have a complete row
             if (j === board[i].length - 1) {
-                removedRows.push(i)
+                removedRows.unshift(i)
                 removeRow(board, i)
             }
         }
@@ -24,49 +24,27 @@ function checkCompleteRows(board) {
 
     // Add function to pull down the board
     if (removedRows.length > 0) {
-
-        // [DELETE]
-        board = [[0, 0, 0, 0, 0], [0, 1, 0, 0, 1], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 0, 0, 0], [0, 0, 0, 0, 0]] // [DELETE]
-        removedRows = [0, 2, 3]
-
         lowerRows(board, removedRows)
     }
+
+    // Calculate score
+    return removedRows.length * 100
 }
 
 /**
  * Fills in the rows that were just removed
  * @param {[[int]]} board An array of arrays representing the Tetris board
- * @param {[int]} rows Non-empty array of rows that were removed from the grid in decreasing order
+ * @param {[int]} rows Non-empty array of rows that were removed from the grid in ascending order
  */
 function lowerRows(board, rows) {
-    // // Find the first empty row
-    // for (let i = 0; i < board.length; i++) {
-    //     if (rows.has(i)) {
-    //         // Find the next non-empty row to swap with
-    //         for (let i2 = i + 1; i2 < board.length; i2++) {
-    //             if (!rows.has(i2)) {
-    //                 // Swap the rows
-    //                 for (let j = 0; j < board[0].length; j++) {
-    //                     board[i][j] = board[i2][j]
-    //                     board[i2][j] = 0
-    //                 }
-    //                 rows.delete(i)
-    //                 rows.add(i2)
-    //             }
-    //         }
-    //     }
-    // }
-
     // Remove the row from the board
+    var removedCount = 0
     for (let i = 0; i < rows.length; i++) {
-        board.splice(rows[i], 1)
-        board.push(new Array(13).fill(0))
+        // As we remove rows, the index will change, so we need to compensate for that
+        board.splice(rows[i] - removedCount, 1)
+        board.push(new Array(board[0].length).fill(0))
+        removedCount++
     }
-
-    console.log(board) // [DELETE]
-
-
-
 }
 
 /**
@@ -77,13 +55,13 @@ function lowerRows(board, rows) {
 function removeRow(board, row) {
     // Animate the row clearing by flashing it off and on 3 times
     for (let i = 0; i < 3; i++) {
-        board[row] = new Array(13).fill(0)
+        board[row].fill(0)
 
         // Delay for around 100 ms
         sleep(100)
-        board[row] = new Array(13).fill(1)
+        board[row].fill(1)
     }
-    board[row] = new Array(13).fill(0)
+    board[row].fill(0)
 }
 
 /**
@@ -105,19 +83,19 @@ function startTetris() {
         The board is a 13 x 25 grid that represents the state of the game. It will be filled with 1s (denoting a block) and 0s (denoting an empty space).
         (0, 0) denotes the element in the bottom left of the grid.
     */
-    // var board = new Array(25).fill(new Array(13).fill(0))
-    var board = new Array(25).fill(new Array(13).fill(1)) // [DELETE]
+    var board = new Array(25)
+    for (let i = 0; i < board.length; i++) {
+        board[i] = new Array(13).fill(0)
+    }
     var score = 0
 
-    checkCompleteRows(board) // [DELETE]
 
     // Main loop
-    // while (true) {
-    //     checkCompleteRows(board)
+    while (true) {
+        checkCompleteRows(board)
 
 
-
-
-    //     // console.log(board) // [DELETE]
-    // }
+        // Iterate every 100 ms
+        sleep( 100 )
+    }
 }
