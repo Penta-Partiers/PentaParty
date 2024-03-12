@@ -1,1 +1,2 @@
-# PentaParty\nBy Aaron Lin, Alphonso Dineros, and Mark Zhang
+# PentaParty
+By Aaron Lin, Alphonso Dineros, and Mark Zhang
