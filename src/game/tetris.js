@@ -32,6 +32,21 @@ function checkCompleteRows(board) {
 }
 
 /**
+ * Checks for the end of the game
+ * @param {[[int]]} board An array of arrays representing the Tetris board
+ * @return {bool} Boolean representing if the game has ended
+ */
+function checkEndGame(board) {
+    // Check all of the spaces in the top row
+    for (let j = 0; j < board[0].length; j++) {
+        if (board[board.length - 1][j] === 1) {
+            return true
+        }
+    }
+    return false
+}
+
+/**
  * Fills in the rows that were just removed
  * @param {[[int]]} board An array of arrays representing the Tetris board
  * @param {[int]} rows Non-empty array of rows that were removed from the grid in ascending order
@@ -89,10 +104,12 @@ function startTetris() {
     }
     var score = 0
 
-
     // Main loop
     while (true) {
-        checkCompleteRows(board)
+        score += checkCompleteRows(board)
+        if (checkEndGame(board)) {
+            break;
+        }
 
 
         // Iterate every 100 ms
