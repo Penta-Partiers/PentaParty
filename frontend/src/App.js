@@ -3,10 +3,12 @@ import Login from './pages/Login';
 
 function App() {
   // Temporary value for testing
-  const loggedIn = true;
+  const loggedIn = false;
 
   if (!loggedIn) {
-    return <Login />
+    return (
+      <Login />
+    )
   }
 
   return (
