@@ -1,10 +1,21 @@
 /**
  * Contiguous sets of blocks that will be dropping from the top of the screen
- * @param {[[int, int]]} points An array of tuples that dictate the x and y position of each point making up the shape
  */
 class Shape {
-    constructor(points) {
+    /**
+     * Constructor
+     * @param {[[int]]} board An array of arrays representing the Tetris board
+     * @param {[[int, int]]} points An array of tuples that dictate the x and y position of each point making up the shape
+     */
+    constructor(board, points) {
         this.points = points
+
+        // Mark the shape on the board
+        for (let p = 0; p < this.points.length; p++) {
+            let rowNumber = this.points[p][0]
+            let columnNumber = this.points[p][1]
+            board[rowNumber][columnNumber] = 2
+        }
     }
 
     /**
@@ -25,22 +36,84 @@ class Shape {
      * @return {bool} If the shape became static by hitting the ground
      */
     lowerShape(board) {
-        // Check if there's room beneath the shape and empty the current position
+        // Check if there's room beneath the shape
         for (let p = 0; p < this.points.length; p++) {
             let rowNumber = this.points[p][0]
             let columnNumber = this.points[p][1]
+
+            // If we can't go any lower, freeze the shape in place
             if (rowNumber === 0 || board[rowNumber - 1][columnNumber] === 1) {
                 this.freeze(board)
                 return true
             }
-            board[rowNumber][columnNumber] = 0
         }
-
-        // Shift all of the points downwards and update the points array
+        
+        // Remove existing shape and update the points array
         for (let p = 0; p < this.points.length; p++) {
-            this.points[p][0]--;
             let rowNumber = this.points[p][0]
             let columnNumber = this.points[p][1]
+
+            board[rowNumber][columnNumber] = 0
+            this.points[p][0]--
+        }
+
+        // Shift all of the points downwards
+        for (let p = 0; p < this.points.length; p++) {
+            let rowNumber = this.points[p][0]
+            let columnNumber = this.points[p][1]
+
+            board[rowNumber][columnNumber] = 2
+        }
+
+        return false
+    }
+
+    /**
+     * Moves the shape in a direction based on the arguments
+     * @param {[[int]]} board An array of arrays representing the Tetris board
+     * @param {int} direction An integer specifying the direction the shape is translated:
+     *  - -1 means a shift to the left
+     *  - 0 means a shift downwards by calling the lowerShape function
+     *  - 1 means a shift to the right
+     * @return {bool} If the shape became static by hitting the ground
+     */
+    translateShape(board, direction) {
+        // If the shape is being shifted downwards
+        if (direction === 0) {
+            return this.lowerShape(board)
+        }
+
+        // Quick error check to verify values
+        if (direction !== -1 && direction !== 1) {
+            console.log("[Tetris] Translate shape received an invalid direction of: " + direction)
+            return false
+        }
+
+        // Check if there's room around the shape
+        for (let p = 0; p < this.points.length; p++) {
+            let rowNumber = this.points[p][0]
+            let columnNumber = this.points[p][1]
+
+            // If the board or a block obstructs the path
+            if (columnNumber + direction < 0 || columnNumber + direction >= board[0].length || board[rowNumber][columnNumber] === 1) {
+                return false
+            }
+        }
+
+        // Remove existing shape and update the points array
+        for (let p = 0; p < this.points.length; p++) {
+            let rowNumber = this.points[p][0]
+            let columnNumber = this.points[p][1]
+
+            board[rowNumber][columnNumber] = 0
+            this.points[p][1] += direction
+        }
+
+        // Shift all of the points in the desired direction and update the points array
+        for (let p = 0; p < this.points.length; p++) {
+            let rowNumber = this.points[p][0]
+            let columnNumber = this.points[p][1]
+
             board[rowNumber][columnNumber] = 2
         }
 
@@ -135,7 +208,7 @@ function removeRow(board, row) {
  */
 function sleep(time) {
     // From https://alvarotrigo.com/blog/wait-1-second-javascript/
-    const start = Date.now();
+    const start = Date.now()
     while (Date.now() - start < time) {}
 }
 
@@ -160,9 +233,14 @@ function startTetris() {
 
     // Main loop
     while (true) {
+        // [DELETE] Create shape and lower it
+        // shape = new Shape(board, [[24, 0], [24, 1], [24, 2], [23, 1]])
+
+
+
         score += checkCompleteRows(board)
         if (checkEndGame(board)) {
-            break;
+            break
         }
 
         // Iterate every 100 ms
