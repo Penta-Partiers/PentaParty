@@ -69,6 +69,103 @@ class Shape {
     }
 
     /**
+     * Rotates the shape based on the algorithms listed here https://stackoverflow.com/questions/233850/tetris-piece-rotation-algorithm
+     * @param {[[int]]} board An array of arrays representing the Tetris board
+     * @param {int} direction An integer specifying the direction the shape is rotated:
+     *  - -1 means counter clockwise rotation
+     *  - 1 means clockwise rotation
+     */
+    rotateShape(board, direction) {
+        // Quick error check to verify values
+        if (direction !== -1 && direction !== 1) {
+            console.log("[Tetris] Rotate shape received an invalid direction of: " + direction)
+            return false
+        }
+
+        // Find the minimum array (smallest array containing all points)
+        var minX = 999
+        var minY =  999
+        var maxX = 0
+        var maxY = 0
+        for (let p = 0; p < this.points.length; p++) {
+            let rowNumber = this.points[p][0]
+            let columnNumber = this.points[p][1]
+
+            if (columnNumber < minX) {
+                minX = columnNumber
+            }
+            if (columnNumber > maxX) {
+                maxX = columnNumber
+            }
+            if (rowNumber < minY) {
+                minY = rowNumber
+            }
+            if (rowNumber > maxY) {
+                maxY = rowNumber
+            }
+        }
+
+        // Rotate the shape within the minimum array
+        var rotatedPoints = []
+        for (let p = 0; p < this.points.length; p++) {
+            // Start by subtracting the minimum of the coordinate to get the minimum array coordinates
+            let rowNumber = this.points[p][0] - minY
+            let columnNumber = this.points[p][1] - minX
+            
+            // Transpose the matrix point
+            let temp = rowNumber
+            rowNumber = columnNumber
+            columnNumber = temp
+            
+            // Finalize the rotation by reversing either the rows or the columns
+            // Due to the transpose, the maximum index for the row will be the calculated using the range of columns (X coordinate) of the original matrix
+            if (direction === -1) {
+                // Reverse columns for counter clockwise
+                var maxColumnIndex = maxY - minY
+                columnNumber = maxColumnIndex - columnNumber
+            } else {
+                // Reverse rows for clockwise
+                var maxRowIndex = maxX - minX
+                rowNumber = maxRowIndex - rowNumber
+            }
+
+            // Add back minimum of each dimension to get actual coordinates
+            rowNumber += minY
+            columnNumber += minX
+            rotatedPoints.push([rowNumber, columnNumber])
+        }
+
+        // Check if all of the points are available
+        for (let p = 0; p < rotatedPoints.length; p++) {
+            let rowNumber = rotatedPoints[p][0]
+            let columnNumber = rotatedPoints[p][1]
+
+            // If the board or a block obstructs the path
+            if (columnNumber < 0 || columnNumber >= board[0].length || rowNumber < 0 || rowNumber >= board.length || board[rowNumber][columnNumber] === 1) {
+                return
+            }
+        }
+        
+        // Remove existing shape
+        for (let p = 0; p < this.points.length; p++) {
+            let rowNumber = this.points[p][0]
+            let columnNumber = this.points[p][1]
+            
+            board[rowNumber][columnNumber] = 0
+        }
+        
+        // Update the board state with rotation and update the points array
+        this.points = []
+        for (let p = 0; p < rotatedPoints.length; p++) {
+            let rowNumber = rotatedPoints[p][0]
+            let columnNumber = rotatedPoints[p][1]
+
+            board[rowNumber][columnNumber] = 2
+            this.points.push([rowNumber, columnNumber])
+        }
+    }
+
+    /**
      * Moves the shape in a direction based on the arguments
      * @param {[[int]]} board An array of arrays representing the Tetris board
      * @param {int} direction An integer specifying the direction the shape is translated:
@@ -234,7 +331,7 @@ function startTetris() {
     // Main loop
     while (true) {
         // [DELETE] Create shape and lower it
-        // shape = new Shape(board, [[24, 0], [24, 1], [24, 2], [23, 1]])
+        // var shape = new Shape(board, [[24, 0], [24, 1], [24, 2], [23, 1]])
 
 
 
