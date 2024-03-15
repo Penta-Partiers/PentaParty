@@ -219,7 +219,7 @@ class Shape {
 }
 
 /**
- * Checks for a completed row in a Tetris board
+ * Checks for a completed row in a Tetris board and lowers rows when needed
  * @param {[[int]]} board An array of arrays representing the Tetris board
  * @return {int} The number of points to add to the player's score
  */
@@ -257,13 +257,49 @@ function checkCompleteRows(board) {
  * @return {bool} Boolean representing if the game has ended
  */
 function checkEndGame(board) {
-    // Check all of the spaces in the top row
+    // Check all of the spaces in the top three rows (to allow room for shapes to spawn)
     for (let j = 0; j < board[0].length; j++) {
-        if (board[board.length - 1][j] === 1) {
+        if (board[board.length - 3][j] === 1 || board[board.length - 2][j] === 1 || board[board.length - 1][j] === 1) {
             return true
         }
     }
     return false
+}
+
+/**
+ * Randomly selects a 4 block shape from a predefined set. We are guaranteed that the top 3 rows are free
+ * @param {[[int]]} board An array of arrays representing the Tetris board
+ * @return {Shape} A 4 block shape
+ */
+function generateTetromino(board) {
+    // There are 5 possible tetrominos
+    shapeChoice = Math.floor(Math.random() * 5)
+
+    switch(shapeChoice) {
+        case 0:
+            // Line
+            return new Shape(board, [[24, 4], [24, 5], [24, 6], [24, 7]])
+        case 1:
+            // L-shape
+            if (Math.floor(Math.random() * 2) === 0) {
+                return new Shape(board, [[24, 5], [24, 6], [24, 7], [23, 7]])
+            } else {
+                return new Shape(board, [[24, 5], [24, 6], [24, 7], [23, 5]])
+            }
+        case 2:
+            // Z-shape
+            if (Math.floor(Math.random() * 2) === 0) {
+                return new Shape(board, [[23, 5], [23, 6], [24, 6], [24, 7]])
+            } else {
+                return new Shape(board, [[24, 5], [24, 6], [23, 6], [23, 7]])
+            }
+        case 3:
+            // T-shape
+            return new Shape(board, [[24, 5], [24, 6], [24, 7], [23, 6]])
+        default:
+            // Block
+            return new Shape(board, [[24, 5], [24, 6], [23, 5], [23, 6]])
+    }
 }
 
 /**
@@ -327,13 +363,20 @@ function startTetris() {
         board[i] = new Array(13).fill(0)
     }
     var score = 0
+    var currentShape = -1
+    var shapeQueue = []
 
     // Main loop
     while (true) {
-        // [DELETE] Create shape and lower it
-        // var shape = new Shape(board, [[24, 0], [24, 1], [24, 2], [23, 1]])
-
-
+        // Move the shape
+        if (currentShape === -1) {
+            if (shapeQueue.length === 0) {
+                shape = generateTetromino(board)
+            } else {
+                shape = shapeQueue.shift()
+            }
+        }
+        shape.lowerShape(board)
 
         score += checkCompleteRows(board)
         if (checkEndGame(board)) {
