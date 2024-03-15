@@ -7,6 +7,8 @@ import Login from "./pages/Login"
 import SignUp from './pages/SignUp';
 import PlayerView from './pages/PlayerView';
 
+import './index.css';
+
 const router = createBrowserRouter([
   {
     path: "/",
