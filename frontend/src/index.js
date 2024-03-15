@@ -5,6 +5,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import App from './App';
 import Login from "./pages/Login"
 import SignUp from './pages/SignUp';
+import PlayerView from './pages/PlayerView';
 
 const router = createBrowserRouter([
   {
@@ -18,6 +19,10 @@ const router = createBrowserRouter([
   {
     path: "/signup",
     element: <SignUp />
+  },
+  {
+    path: "/player", // TEMPORARY, will be tied to lobby later?
+    element: <PlayerView />
   },
 ]);
 
