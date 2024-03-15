@@ -274,31 +274,32 @@ function checkEndGame(board) {
 function generateTetromino(board) {
     // There are 5 possible tetrominos
     shapeChoice = Math.floor(Math.random() * 5)
+    middleColumn = Math.floor(board[0].length / 2)
 
     switch(shapeChoice) {
         case 0:
             // Line
-            return new Shape(board, [[24, 4], [24, 5], [24, 6], [24, 7]])
+            return new Shape(board, [[board.length - 1, middleColumn - 2], [board.length - 1, middleColumn - 1], [board.length - 1, middleColumn], [board.length - 1, middleColumn + 1]])
         case 1:
             // L-shape
             if (Math.floor(Math.random() * 2) === 0) {
-                return new Shape(board, [[24, 5], [24, 6], [24, 7], [23, 7]])
+                return new Shape(board, [[board.length - 1, middleColumn - 1], [board.length - 1, middleColumn], [board.length - 1, middleColumn + 1], [board.length - 2, middleColumn + 1]])
             } else {
-                return new Shape(board, [[24, 5], [24, 6], [24, 7], [23, 5]])
+                return new Shape(board, [[board.length - 1, middleColumn - 1], [board.length - 1, middleColumn], [board.length - 1, middleColumn + 1], [board.length - 2, middleColumn - 1]])
             }
         case 2:
             // Z-shape
             if (Math.floor(Math.random() * 2) === 0) {
-                return new Shape(board, [[23, 5], [23, 6], [24, 6], [24, 7]])
+                return new Shape(board, [[board.length - 2, middleColumn - 1], [board.length - 2, middleColumn], [board.length - 1, middleColumn], [board.length - 1, middleColumn + 1]])
             } else {
-                return new Shape(board, [[24, 5], [24, 6], [23, 6], [23, 7]])
+                return new Shape(board, [[board.length - 1, middleColumn - 1], [board.length - 1, middleColumn], [board.length - 2, middleColumn], [board.length - 2, middleColumn + 1]])
             }
         case 3:
             // T-shape
-            return new Shape(board, [[24, 5], [24, 6], [24, 7], [23, 6]])
+            return new Shape(board, [[board.length - 1, middleColumn - 1], [board.length - 1, middleColumn], [board.length - 1, middleColumn + 1], [board.length - 2, middleColumn]])
         default:
             // Block
-            return new Shape(board, [[24, 5], [24, 6], [23, 5], [23, 6]])
+            return new Shape(board, [[board.length - 1, middleColumn - 1], [board.length - 1, middleColumn], [board.length - 2, middleColumn - 1], [board.length - 2, middleColumn]])
     }
 }
 
