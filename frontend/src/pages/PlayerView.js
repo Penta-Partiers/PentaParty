@@ -2,14 +2,25 @@ import { Grid, Box, Typography } from '@mui/material';
 
 import GameBoard from '../components/GameBoard';
 
+const NUM_ROWS = 25;
+const NUM_COLS = 13;
+
 export default function PlayerView() {
     // Temporary variable for testing the scoreboard display
     const playerScores = [
-        ["player_01", 1000],
+        ["player_01", 10000],
         ["player_02", 2000],
         ["player_03", 3000],
         ["player_04", 4000],
     ];
+
+    // Temporary variable for testing the board and setting colors
+    const board = new Array(NUM_ROWS)
+    for (let i = 0; i < board.length; i++) {
+        board[i] = new Array(NUM_COLS).fill(0)
+    }
+    board[0][0] = 2;
+    board[0][1] = 1;
 
     return (
         <div className="min-h-screen flex justify-center items-center">
@@ -20,7 +31,7 @@ export default function PlayerView() {
                 alignItems="flex-start"
             >
                 <Grid item>
-                    <GameBoard />
+                    <GameBoard boardState={board} />
                 </Grid>
                 <Grid item>
                     <Box 
@@ -31,11 +42,11 @@ export default function PlayerView() {
                         justifyContent="center"
                         alignItems="center"
                         gap={1}
-                        sx={{ boxShadow: 3, borderRadius: '16px' }}
+                        sx={{ boxShadow: 3, borderRadius: '16px', p: 4 }}
                     >
                         <Typography variant="h4">Scoreboard</Typography>
                         {playerScores.map((data, index) => (
-                            <div key={index} className="flex justify-between gap-3">
+                            <div key={index} className="flex justify-between w-full">
                                 <div><b>{data[0]}:</b></div>
                                 <div>{data[1]}</div>
                             </div>
