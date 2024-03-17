@@ -4,8 +4,8 @@
 class Shape {
     /**
      * Constructor
-     * @param {[[int]]} board An array of arrays representing the Tetris board
-     * @param {[[int, int]]} points An array of tuples that dictate the x and y position of each point making up the shape
+     * @param {array[array[number]]} board An array of arrays representing the Tetris board
+     * @param {array[array[number, number]]} points An array of tuples that dictate the x and y position of each point making up the shape
      */
     constructor(board, points) {
         this.points = points
@@ -20,7 +20,7 @@ class Shape {
 
     /**
      * Freezes the shape in place by converting the points to static
-     * @param {[[int]]} board An array of arrays representing the Tetris board
+     * @param {array[array[number]]} board An array of arrays representing the Tetris board
      */
     freeze(board) {
         for (let p = 0; p < this.points.length; p++) {
@@ -32,7 +32,7 @@ class Shape {
 
     /**
      * Lowers the shape by one row
-     * @param {[[int]]} board An array of arrays representing the Tetris board
+     * @param {array[array[number]]} board An array of arrays representing the Tetris board
      * @return {bool} If the shape became static by hitting the ground
      */
     lowerShape(board) {
@@ -70,8 +70,8 @@ class Shape {
 
     /**
      * Rotates the shape based on the algorithms listed here https://stackoverflow.com/questions/233850/tetris-piece-rotation-algorithm
-     * @param {[[int]]} board An array of arrays representing the Tetris board
-     * @param {int} direction An integer specifying the direction the shape is rotated:
+     * @param {array[array[number]]} board An array of arrays representing the Tetris board
+     * @param {number} direction An integer specifying the direction the shape is rotated:
      *  - -1 means counter clockwise rotation
      *  - 1 means clockwise rotation
      */
@@ -167,8 +167,8 @@ class Shape {
 
     /**
      * Moves the shape in a direction based on the arguments
-     * @param {[[int]]} board An array of arrays representing the Tetris board
-     * @param {int} direction An integer specifying the direction the shape is translated:
+     * @param {array[array[number]]} board An array of arrays representing the Tetris board
+     * @param {number} direction An integer specifying the direction the shape is translated:
      *  - -1 means a shift to the left
      *  - 0 means a shift downwards by calling the lowerShape function
      *  - 1 means a shift to the right
@@ -220,8 +220,8 @@ class Shape {
 
 /**
  * Checks for a completed row in a Tetris board and lowers rows when needed
- * @param {[[int]]} board An array of arrays representing the Tetris board
- * @return {int} The number of points to add to the player's score
+ * @param {array[array[number]]} board An array of arrays representing the Tetris board
+ * @return {number} The number of points to add to the player's score
  */
 function checkCompleteRows(board) {
     removedRows = []
@@ -253,7 +253,7 @@ function checkCompleteRows(board) {
 
 /**
  * Checks for the end of the game
- * @param {[[int]]} board An array of arrays representing the Tetris board
+ * @param {array[array[number]]} board An array of arrays representing the Tetris board
  * @return {bool} Boolean representing if the game has ended
  */
 function checkEndGame(board) {
@@ -268,7 +268,7 @@ function checkEndGame(board) {
 
 /**
  * Randomly selects a 4 block shape from a predefined set. We are guaranteed that the top 3 rows are free
- * @param {[[int]]} board An array of arrays representing the Tetris board
+ * @param {array[array[number]]} board An array of arrays representing the Tetris board
  * @return {Shape} A 4 block shape
  */
 function generateTetromino(board) {
@@ -305,8 +305,8 @@ function generateTetromino(board) {
 
 /**
  * Fills in the rows that were just removed
- * @param {[[int]]} board An array of arrays representing the Tetris board
- * @param {[int]} rows Non-empty array of rows that were removed from the grid in ascending order
+ * @param {array[array[number]]} board An array of arrays representing the Tetris board
+ * @param {array[number]} rows Non-empty array of rows that were removed from the grid in ascending order
  */
 function lowerRows(board, rows) {
     // Remove the row from the board
@@ -321,8 +321,8 @@ function lowerRows(board, rows) {
 
 /**
  * Removes a row from the Tetris board
- * @param {[[int]]} board An array of arrays representing the Tetris board
- * @param {int} row The row to remove from the board
+ * @param {array[array[number]]} board An array of arrays representing the Tetris board
+ * @param {number} row The row to remove from the board
  */
 function removeRow(board, row) {
     // Animate the row clearing by flashing it off and on 3 times
@@ -338,7 +338,7 @@ function removeRow(board, row) {
 
 /**
  * This function performs a blocking wait for the specified amount of time
- * @param {int} time The number of milliseconds to block for
+ * @param {number} time The number of milliseconds to block for
  */
 function sleep(time) {
     // From https://alvarotrigo.com/blog/wait-1-second-javascript/
