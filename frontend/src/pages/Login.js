@@ -1,27 +1,34 @@
 //@ts-check
+// React
 import React, { useState, useContext } from 'react';
 
+// Routing
 import { useNavigate } from "react-router-dom";
 
+// Firebase
 import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
 
+// Authentication
 import { Context } from '../auth/AuthContext';
 
-import { Grid, Typography, Box, TextField, Button } from '@mui/material';
+// Material UI
+import { Grid, Typography, Box, TextField, Button, Alert, Divider } from '@mui/material';
+import GoogleIcon from '@mui/icons-material/Google';
 
 export default function Login() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [displayErrorMessage, setDisplayErrorMessage] = useState(false);
+
     const { setUser } = useContext(Context);
     const navigate = useNavigate();
 
     function handleLoginClick(e) {
         e.preventDefault();
+
         signInWithEmailAndPassword(auth, email, password)
         .then((userCredential) => {
-            // const user = userCredential.user;
-            // console.log(user);
             setUser(userCredential.user);
             navigate("/home");
         })
@@ -29,22 +36,30 @@ export default function Login() {
             const errorCode = error.code;
             const errorMessage = error.message;
             console.log(errorCode, errorMessage)
+
+            // If the credentials are invalid, display the error alert
+            setDisplayErrorMessage(true);
         });
     }
 
+    // Update the email and password while the user is typing
     function handleEmailChange(event) {
         setEmail(event.target.value);
     }
-
     function handlePasswordChange(event) {
         setPassword(event.target.value);
     }
 
     const signInWithGoogle = async () => {
         try {
-        await signInWithPopup(auth,googleProvider);
-        } catch (err){
-          console.error(err);
+            signInWithPopup(auth, googleProvider)
+            .then((userCredential) => {
+                setUser(userCredential.user);
+                navigate("/home");
+            })
+        } 
+        catch (err) {
+            console.error(err);
         }
       };
 
@@ -61,29 +76,43 @@ export default function Login() {
                 <Typography variant="h2" textAlign={"center"} sx={{ my: 2 }}>PentaParty</Typography>
                 <Box 
                     width={400}
-                    height={400}
+                    height={"auto"}
                     display='flex'
                     flexDirection='column'
                     justifyContent='center'
                     alignItems='center'
-                    sx={{ boxShadow: 2, borderRadius: '16px' }}
+                    gap={2}
+                    sx={{ py: 4, boxShadow: 2, borderRadius: '16px' }}
                 >
-                    <Typography variant="h4" sx={{ mb: 4 }}>Login</Typography>
+                    <Typography variant="h4">Login</Typography>
+
+                    {displayErrorMessage &&
+                        <Alert 
+                            severity='error'
+                            onClose={() => setDisplayErrorMessage(false)}
+                            sx={{ width: '72%' }}
+                        >
+                            Invalid credentials. Please enter a valid email and password.
+                        </Alert>
+                    }
+
                     <TextField 
                         label="Email"
                         value={email}
                         onChange={handleEmailChange}
-                        sx={{ width: '80%', mb: 2 }} />
+                        
+                        sx={{ width: '80%' }} />
                     <TextField 
                         label="Password" 
                         type="password" 
                         value={password}
                         onChange={handlePasswordChange}
-                        sx={{ width: '80%', mb: 3 }} />
+                        sx={{ width: '80%' }} />
+
                     <Button 
                         variant="contained" 
                         onClick={handleLoginClick}
-                        sx={{ mb: 1 }}>
+                        sx={{}}>
                             Log In
                     </Button>
                     <Button 
@@ -91,7 +120,10 @@ export default function Login() {
                         href="/signup">
                             Sign Up
                     </Button>
-                    <Button onClick={signInWithGoogle}> Signin with google</Button>
+
+                    <Divider sx={{ width: '80%' }} />
+
+                    <Button variant="outlined" startIcon={<GoogleIcon />} onClick={signInWithGoogle}>Sign In with Google</Button>
                 </Box>
             </Grid>
         </Grid>

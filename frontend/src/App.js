@@ -12,7 +12,6 @@ import { ProtectedRoute } from './auth/ProtectedRoute';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
-import Loading from "./pages/Loading";
 
 // References: 
 // - https://reactrouter.com/en/main/routers/create-browser-router
