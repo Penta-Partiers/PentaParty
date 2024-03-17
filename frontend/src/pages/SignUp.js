@@ -1,14 +1,26 @@
-import { useState } from 'react';
-
+//@ts-check
+import React, { useState } from 'react';
+import {  createUserWithEmailAndPassword  } from 'firebase/auth';
+import { auth } from '../firebase';
 import { Grid, Typography, Box, TextField, Button } from '@mui/material';
 
 export default function SignUp() {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
 
-    function handleSignUpClick() {
-        console.log("username: " + username);
-        console.log("password: " + password);
+     async function handleSignUpClick(e) {
+        e.preventDefault()
+     
+      await createUserWithEmailAndPassword(auth, username, password)
+        .then((userCredential) => {
+            const user = userCredential.user;
+            console.log(user);
+        })
+        .catch((error) => {
+            const errorCode = error.code;
+            const errorMessage = error.message;
+            console.log(errorCode, errorMessage);
+        });
     }
 
     function handleUsernameChange(event) {
