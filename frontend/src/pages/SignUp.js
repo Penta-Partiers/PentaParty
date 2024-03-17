@@ -1,20 +1,30 @@
 //@ts-check
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
+
+import { useNavigate } from "react-router-dom";
+
+import { Context } from '../auth/AuthContext';
+
 import {  createUserWithEmailAndPassword  } from 'firebase/auth';
 import { auth } from '../firebase';
+
 import { Grid, Typography, Box, TextField, Button } from '@mui/material';
 
 export default function SignUp() {
-    const [username, setUsername] = useState("");
+    const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const { setUser } = useContext(Context);
+    const navigate = useNavigate();
 
-     async function handleSignUpClick(e) {
+    async function handleSignUpClick(e) {
         e.preventDefault()
      
-      await createUserWithEmailAndPassword(auth, username, password)
+      await createUserWithEmailAndPassword(auth, email, password)
         .then((userCredential) => {
-            const user = userCredential.user;
-            console.log(user);
+            // const user = userCredential.user;
+            // console.log(user);
+            setUser(userCredential.user);
+            navigate("/home");
         })
         .catch((error) => {
             const errorCode = error.code;
@@ -23,8 +33,8 @@ export default function SignUp() {
         });
     }
 
-    function handleUsernameChange(event) {
-        setUsername(event.target.value);
+    function handleEmailChange(event) {
+        setEmail(event.target.value);
     }
 
     function handlePasswordChange(event) {
@@ -52,9 +62,9 @@ export default function SignUp() {
                 >
                     <Typography variant="h4" sx={{ mb: 4 }}>Sign Up</Typography>
                     <TextField 
-                        label="Username"
-                        value={username}
-                        onChange={handleUsernameChange}
+                        label="Email"
+                        value={email}
+                        onChange={handleEmailChange}
                         sx={{ width: '80%', mb: 2 }} />
                     <TextField 
                         label="Password" 

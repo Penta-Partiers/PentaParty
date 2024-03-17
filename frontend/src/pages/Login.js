@@ -1,19 +1,29 @@
 //@ts-check
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
+
+import { useNavigate } from "react-router-dom";
+
 import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
+
+import { Context } from '../auth/AuthContext';
+
 import { Grid, Typography, Box, TextField, Button } from '@mui/material';
 
 export default function Login() {
-    const [username, setUsername] = useState("");
+    const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const { setUser } = useContext(Context);
+    const navigate = useNavigate();
 
     function handleLoginClick(e) {
         e.preventDefault();
-        signInWithEmailAndPassword(auth, username, password)
+        signInWithEmailAndPassword(auth, email, password)
         .then((userCredential) => {
-            const user = userCredential.user;
-            console.log(user);
+            // const user = userCredential.user;
+            // console.log(user);
+            setUser(userCredential.user);
+            navigate("/home");
         })
         .catch((error) => {
             const errorCode = error.code;
@@ -22,8 +32,8 @@ export default function Login() {
         });
     }
 
-    function handleUsernameChange(event) {
-        setUsername(event.target.value);
+    function handleEmailChange(event) {
+        setEmail(event.target.value);
     }
 
     function handlePasswordChange(event) {
@@ -60,9 +70,9 @@ export default function Login() {
                 >
                     <Typography variant="h4" sx={{ mb: 4 }}>Login</Typography>
                     <TextField 
-                        label="Username"
-                        value={username}
-                        onChange={handleUsernameChange}
+                        label="Email"
+                        value={email}
+                        onChange={handleEmailChange}
                         sx={{ width: '80%', mb: 2 }} />
                     <TextField 
                         label="Password" 
@@ -74,7 +84,7 @@ export default function Login() {
                         variant="contained" 
                         onClick={handleLoginClick}
                         sx={{ mb: 1 }}>
-                            Login
+                            Log In
                     </Button>
                     <Button 
                         variant="outlined"
