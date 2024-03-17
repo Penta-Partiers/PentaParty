@@ -1,14 +1,25 @@
-import { useState } from 'react';
-
+//@ts-check
+import React, { useState } from 'react';
+import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
+import { auth, googleProvider } from '../firebase';
 import { Grid, Typography, Box, TextField, Button } from '@mui/material';
 
 export default function Login() {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
 
-    function handleLoginClick() {
-        console.log("username: " + username);
-        console.log("password: " + password);
+    function handleLoginClick(e) {
+        e.preventDefault();
+        signInWithEmailAndPassword(auth, username, password)
+        .then((userCredential) => {
+            const user = userCredential.user;
+            console.log(user);
+        })
+        .catch((error) => {
+            const errorCode = error.code;
+            const errorMessage = error.message;
+            console.log(errorCode, errorMessage)
+        });
     }
 
     function handleUsernameChange(event) {
@@ -18,6 +29,14 @@ export default function Login() {
     function handlePasswordChange(event) {
         setPassword(event.target.value);
     }
+
+    const signInWithGoogle = async () => {
+        try {
+        await signInWithPopup(auth,googleProvider);
+        } catch (err){
+          console.error(err);
+        }
+      };
 
     return (
         <Grid
@@ -62,6 +81,7 @@ export default function Login() {
                         href="/signup">
                             Sign Up
                     </Button>
+                    <Button onClick={signInWithGoogle}> Signin with google</Button>
                 </Box>
             </Grid>
         </Grid>
