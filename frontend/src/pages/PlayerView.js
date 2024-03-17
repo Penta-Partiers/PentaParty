@@ -31,7 +31,7 @@ export default function PlayerView() {
                         justifyContent="center"
                         alignItems="center"
                         gap={1}
-                        className="border border-solid border-black"
+                        sx={{ boxShadow: 3, borderRadius: '16px' }}
                     >
                         <Typography variant="h4">Scoreboard</Typography>
                         {playerScores.map((data, index) => (
