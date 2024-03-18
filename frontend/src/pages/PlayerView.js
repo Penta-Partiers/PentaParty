@@ -1,11 +1,21 @@
 import { Grid, Box, Typography } from '@mui/material';
 
 import GameBoard from '../components/GameBoard';
+import { useGame } from '../tetris/useGame';
 
 const NUM_ROWS = 25;
 const NUM_COLS = 13;
 
 export default function PlayerView() {
+    [
+        startGame,
+        board,
+        score,
+        gameEnded,
+        onKeyDown,
+        onKeyUp,
+    ] = useGame();
+
     // Temporary variable for testing the scoreboard display
     const playerScores = [
         ["player_01", 10000],
@@ -15,12 +25,12 @@ export default function PlayerView() {
     ];
 
     // Temporary variable for testing the board and setting colors
-    const board = new Array(NUM_ROWS)
-    for (let i = 0; i < board.length; i++) {
-        board[i] = new Array(NUM_COLS).fill(0)
-    }
-    board[0][0] = 2;
-    board[0][1] = 1;
+    // const board = new Array(NUM_ROWS)
+    // for (let i = 0; i < board.length; i++) {
+    //     board[i] = new Array(NUM_COLS).fill(0)
+    // }
+    // board[0][0] = 2;
+    // board[0][1] = 1;
 
     return (
         <div className="min-h-screen flex justify-center items-center">
@@ -31,7 +41,8 @@ export default function PlayerView() {
                 alignItems="flex-start"
             >
                 <Grid item>
-                    <GameBoard boardState={board} />
+                    {!gameEnded && <GameBoard boardState={board} />}
+                    {gameEnded && <div>Game has ended!</div>}
                 </Grid>
                 <Grid item>
                     <Box 
@@ -52,6 +63,7 @@ export default function PlayerView() {
                             </div>
                         ))}
                     </Box>
+                    <Button onClick={startGame}>Start Game</Button>
                 </Grid>
             </Grid>
         </div>
