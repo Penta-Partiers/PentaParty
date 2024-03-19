@@ -6,14 +6,18 @@ import { useInterval } from './useInterval';
 import { useBoard } from './useBoard';
 
 export function useGame() {
-    const [{ board }, dispatchBoardState] = useBoard();
+    const [{ board, currentColor }, dispatchBoardState] = useBoard();
     const [gameInProgress, setGameInProgress] = useState(false);
     const [score, setScore] = useState(0);
     const [tickSpeed, setTickSpeed] = useState(null);
     const [userInput, setUserInput] = useState([]);
 
+    // TODO in the future: custom hook for managing player interactions?
+    //  - stuff like adding incomplete rows when another player completes a row
+    //  - Or maybe just a useEffect
+
     const startGame = useCallback(() => {
-        console.log("game started!");
+        console.log("game started!"); // Debug
         setScore(0);
         setGameInProgress(true);
         setTickSpeed(1000);
@@ -34,7 +38,6 @@ export function useGame() {
     useEffect(endGameCheck, [board]);
 
     function endGameCheck() {
-        console.log("endGameCheck ran!") // Debug
         if (checkEndGame(board)) {
             setGameInProgress(false);
             window.removeEventListener('keyup', keyUpEventListener);
@@ -45,7 +48,7 @@ export function useGame() {
     function checkEndGame(board) {
         // Check all of the spaces in the top three rows (to allow room for shapes to spawn)
         for (let j = 0; j < board[0].length; j++) {
-            if (board[board.length - 3][j] === 1 || board[board.length - 2][j] === 1 || board[board.length - 1][j] === 1) {
+            if (board[0][j] === 1 || board[1][j] === 1 || board[2][j] === 1) {
                 return true
             }
         }
@@ -56,12 +59,10 @@ export function useGame() {
     useEffect(updateScore, [board]);
 
     function updateScore() {
-        console.log("updateScore ran!") // Debug
         setScore(score + checkCompleteRows(board));
     }
 
     function checkCompleteRows(board) {
-        console.log("checkCompleteRows ran!")
         var removedRows = []
 
         // Iterate from top to bottom
@@ -75,17 +76,13 @@ export function useGame() {
                 // If the entire row is filled with 1s, we have a complete row
                 if (j === board[i].length - 1) {
                     removedRows.unshift(i)
-                    //removeRow(board, i)
                     dispatchBoardState({ type: 'removeRow', row: i })
                 }
             }
         }
 
-        // removedCount = removedRows.length;
-
         if (removedRows.length > 0) {
-            // lowerRows(board, removedRows)
-            dispatchBoardState({ type: 'removeRow', rows: removedRows });
+            dispatchBoardState({ type: 'lowerRows', rows: removedRows });
         }
 
         return removedRows.length * 100;
@@ -109,13 +106,13 @@ export function useGame() {
             dispatchBoardState({ type: 'translate', direction: 0 });
         } else if (e.key === "d") {
             dispatchBoardState({ type: 'translate', direction: 1 });
-        } else if (e.key === "j") {
-            dispatchBoardState({ type: 'rotate', direction: -1 });
         } else if (e.key === "l") {
+            dispatchBoardState({ type: 'rotate', direction: -1 });
+        } else if (e.key === "j") {
             dispatchBoardState({ type: 'rotate', direction: 1 });
         }
         setUserInput(userInput.splice(userInput.indexOf(e.key), 1));
     }
 
-    return { startGame, board, score };
+    return { startGame, board, score, currentColor };
 }

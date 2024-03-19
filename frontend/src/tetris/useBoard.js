@@ -1,9 +1,16 @@
-import { useReducer } from 'react';
+import { useState, useReducer } from 'react';
 
 const NUM_ROWS = 25;
 const NUM_COLS = 13;
 
+/*
+Custom React hook to handle all changes to the board state, specifically:
+    - The board itself (array of array of numbers)
+    - The current shape, represented as an array of tuples
+    - The current shape queue, represented as an array of shape-point representations
+*/
 export function useBoard() {
+    const [currentColor, setCurrentColor] = useState("red");
     /*
     Board state has the following properties:
     {
@@ -23,6 +30,7 @@ export function useBoard() {
                 board: initializeEmptyBoard(),
                 currentShapePoints: null,
                 shapeQueue: [],
+                currentColor: "red",
             };
             return state;
         }
@@ -48,7 +56,8 @@ action.type can either be:
         - includes action.rows
 */
 function boardStateReducer(state, action) {
-    let newState = {...state};
+    // Create a deep clone so that React can detect this as a new state
+    const newState = JSON.parse(JSON.stringify(state));
 
     switch (action.type) {
         // Called once when the game is started, initializes the state
@@ -57,15 +66,18 @@ function boardStateReducer(state, action) {
                 board: initializeEmptyBoard(),
                 currentShapePoints: generateTetromino(),
                 shapeQueue: [],
+                currentColor: selectNextColor(),
             };
         case 'lower':
             if (lowerShape(newState.board, newState.currentShapePoints)) {
                 newState.currentShapePoints = getNextShape(newState.shapeQueue);
+                newState.currentColor = selectNextColor();
             }
             break;
         case 'translate':
             if (translateShape(newState.board, newState.currentShapePoints, action.direction)) {
                 newState.currentShapePoints = getNextShape(newState.shapeQueue);
+                newState.currentColor = selectNextColor();
             }
             break;
         case 'rotate':
@@ -79,7 +91,7 @@ function boardStateReducer(state, action) {
             break;
         default:
             // Debugging - this shouldn't ever happen
-            console.log("boardStateReducer error -> invalid action type");
+            console.error("boardStateReducer error -> invalid action type");
     }
 
     return newState;
@@ -91,20 +103,12 @@ function lowerRows(board, rows) {
     for (let i = 0; i < rows.length; i++) {
         // As we remove rows, the index will change, so we need to compensate for that
         board.splice(rows[i] - removedCount, 1)
-        board.push(new Array(board[0].length).fill(0))
+        board.unshift(new Array(board[0].length).fill(0))
         removedCount++
     }
 }
 
 function removeRow(board, row) {
-    // Animate the row clearing by flashing it off and on 3 times
-    // for (let i = 0; i < 3; i++) {
-    //     board[row].fill(0)
-
-    //     // Delay for around 100 ms
-    //     sleep(100)
-    //     board[row].fill(1)
-    // }
     board[row].fill(0)
 }
 
@@ -335,4 +339,24 @@ function initializeEmptyBoard() {
         board[i] = new Array(NUM_COLS).fill(0);
     }
     return board;
+}
+
+// Possible colors: red, cyan, blue, green, purple, orange
+function selectNextColor() {
+    var colorChoice = Math.floor(Math.random() * 6);
+
+    switch (colorChoice) {
+        case 0:
+            return "red";
+        case 1:
+            return "teal";
+        case 2:
+            return "blue";
+        case 3:
+            return "green";
+        case 4:
+            return "purple";
+        default:
+            return "orange";
+    }
 }

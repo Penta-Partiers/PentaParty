@@ -4,15 +4,7 @@ import GameBoard from '../components/GameBoard';
 import { useGame } from '../tetris/useGame';
 
 export default function PlayerView() {
-    const { startGame, board, score } = useGame();
-
-    // Temporary variable for testing the scoreboard display
-    // const playerScores = [
-    //     ["player_01", 10000],
-    //     ["player_02", 2000],
-    //     ["player_03", 3000],
-    //     ["player_04", 4000],
-    // ];
+    const { startGame, board, score, currentColor } = useGame();
 
     return (
         <div className="min-h-screen flex justify-center items-center">
@@ -23,7 +15,7 @@ export default function PlayerView() {
                 alignItems="flex-start"
             >
                 <Grid item>
-                    {board && <GameBoard boardState={board} />}
+                    {board && <GameBoard boardState={board} currentColor={currentColor} />}
                 </Grid>
                 <Grid item>
                     <Box 
