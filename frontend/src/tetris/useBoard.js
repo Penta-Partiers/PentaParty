@@ -1,4 +1,4 @@
-import { useState, useReducer } from 'react';
+import { useReducer } from 'react';
 
 const NUM_ROWS = 25;
 const NUM_COLS = 13;
@@ -10,7 +10,6 @@ Custom React hook to handle all changes to the board state, specifically:
     - The current shape queue, represented as an array of shape-point representations
 */
 export function useBoard() {
-    const [currentColor, setCurrentColor] = useState("red");
     /*
     Board state has the following properties:
     {

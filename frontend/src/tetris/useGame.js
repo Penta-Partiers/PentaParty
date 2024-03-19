@@ -1,5 +1,5 @@
 // React
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 
 // Custom hooks
 import { useInterval } from './useInterval';
@@ -16,7 +16,7 @@ export function useGame() {
     //  - stuff like adding incomplete rows when another player completes a row
     //  - Or maybe just a useEffect
 
-    const startGame = useCallback(() => {
+    const startGame = () => {
         console.log("game started!"); // Debug
         setScore(0);
         setGameInProgress(true);
@@ -24,7 +24,7 @@ export function useGame() {
         dispatchBoardState({ type: 'start' });
         window.addEventListener('keyup', keyUpEventListener);
         window.addEventListener('keydown', keyDownEventListener);
-    }, [dispatchBoardState, keyUpEventListener, keyDownEventListener])
+    }
 
     // Continuously run the game loop (if it's been started)
     useInterval(() => {
