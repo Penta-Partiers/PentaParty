@@ -67,21 +67,31 @@ function boardStateReducer(state, action) {
     switch (action.type) {
         // Called once when the game is started, initializes the state
         case 'start':
+            let initialBoard = initializeEmptyBoard();
+            let initialShapePoints = generateTetromino();
+
+            // Draw the initial shape on the board
+            renderNewShape(initialBoard, initialShapePoints);
+
             return {
-                board: initializeEmptyBoard(),
-                currentShapePoints: generateTetromino(),
+                board: initialBoard,
+                currentShapePoints: initialShapePoints,
                 shapeQueue: [],
                 currentColor: selectNextColor(),
-            };
+            }
         case 'lower':
             if (lowerShape(newState.board, newState.currentShapePoints)) {
-                newState.currentShapePoints = getNextShape(newState.shapeQueue);
+                let nextShape = getNextShape(newState.shapeQueue);
+                renderNewShape(newState.board, nextShape);
+                newState.currentShapePoints = nextShape;
                 newState.currentColor = selectNextColor();
             }
             break;
         case 'translate':
             if (translateShape(newState.board, newState.currentShapePoints, action.direction)) {
-                newState.currentShapePoints = getNextShape(newState.shapeQueue);
+                let nextShape = getNextShape(newState.shapeQueue);
+                renderNewShape(newState.board, nextShape);
+                newState.currentShapePoints = nextShape;
                 newState.currentColor = selectNextColor();
             }
             break;
@@ -122,6 +132,14 @@ function getNextShape(shapeQueue) {
         return generateTetromino()
     } else {
         return shapeQueue.shift()
+    }
+}
+
+function renderNewShape(board, points) {
+    for (let i = 0; i < points.length; i++) {
+        let rowNumber = points[i][0];
+        let colNumber = points[i][1]; 
+        board[rowNumber][colNumber] = 2;
     }
 }
 
@@ -248,17 +266,14 @@ function rotateShape(board, points, direction) {
     }
 
     // Update the board state with rotation and update the points array
-    // points = []
     for (let p = 0; p < rotatedPoints.length; p++) {
         let rowNumber = rotatedPoints[p][0]
         let columnNumber = rotatedPoints[p][1]
 
         board[rowNumber][columnNumber] = 2
-        // points.push([rowNumber, columnNumber])
         points[p][0] = rowNumber;
         points[p][1] = columnNumber;
     }
-    // console.log("rotation done!")
 }
 
 function lowerShape(board, points) {
