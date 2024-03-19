@@ -13,6 +13,7 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
 import PlayerView from './pages/PlayerView';
+import Friends from "./pages/Friends";
 
 // References: 
 // - https://reactrouter.com/en/main/routers/create-browser-router
@@ -37,7 +38,11 @@ const router = createBrowserRouter([
   {
     path: "/player",
     Component: PlayerView,
-  }
+  },
+  {
+    path: "/friends",
+    Component: Friends,
+  },
 ]);
 
 function App() {  
