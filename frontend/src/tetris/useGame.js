@@ -5,6 +5,8 @@ import { useEffect, useState } from 'react';
 import { useInterval } from './useInterval';
 import { useBoard } from './useBoard';
 
+const SCORE_MULTIPLIER = 100;
+
 export function useGame() {
     const [{ board, currentColor }, dispatchBoardState] = useBoard();
     const [gameInProgress, setGameInProgress] = useState(false);
@@ -85,7 +87,7 @@ export function useGame() {
             dispatchBoardState({ type: 'lowerRows', rows: removedRows });
         }
 
-        return removedRows.length * 100;
+        return removedRows.length * SCORE_MULTIPLIER;
     }
 
     function keyDownEventListener(e) {
