@@ -23,6 +23,8 @@ export default function SignUp() {
     const [password, setPassword] = useState("");
     const [invalidEmail, setInvalidEmail] = useState(false);
     const [invalidPassword, setInvalidPassword] = useState(false);
+    const [emailHelperText, setEmailHelperText] = useState("Please enter a valid email.");
+
     const { setUser } = useContext(Context);
     const navigate = useNavigate();
 
@@ -33,18 +35,21 @@ export default function SignUp() {
         if (!validateEmail(email) || !validatePassword(password)) {
             setInvalidEmail(!validateEmail(email));
             setInvalidPassword(!validatePassword(password));
+            setEmailHelperText("Please enter a valid email.");
             return;
         }
      
         await createUserWithEmailAndPassword(auth, email, password)
             .then((userCredential) => {
                 setUser(userCredential.user);
-                navigate("/home");
+                navigate("/login");
             })
             .catch((error) => {
                 const errorCode = error.code;
                 const errorMessage = error.message;
                 console.log(errorCode, errorMessage);
+                setInvalidEmail(true);
+                setEmailHelperText("This email is already in use.");
             });
     }
 
@@ -84,7 +89,7 @@ export default function SignUp() {
                         value={email}
                         onChange={handleEmailChange}
                         error={invalidEmail}
-                        helperText={invalidEmail ? "Please enter a valid email." : ""}
+                        helperText={invalidEmail ? emailHelperText : ""}
                         sx={{ width: '80%' }} />
                     <TextField 
                         label="Password" 

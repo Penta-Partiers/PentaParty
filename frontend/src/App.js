@@ -12,6 +12,7 @@ import { ProtectedRoute } from './auth/ProtectedRoute';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
+import PlayerView from './pages/PlayerView';
 
 // References: 
 // - https://reactrouter.com/en/main/routers/create-browser-router
@@ -33,6 +34,10 @@ const router = createBrowserRouter([
     path: "/signup",
     Component: SignUp,
   },
+  {
+    path: "/player",
+    Component: PlayerView,
+  }
 ]);
 
 function App() {  
