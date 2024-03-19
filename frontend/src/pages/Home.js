@@ -14,7 +14,7 @@ export default function Home() {
         {
             icon: <VideogameAssetOutlinedIcon sx={{ fontSize: 70 }}/>,
             label: "Join Lobby",
-            link: "/",
+            link: "/join-lobby",
         },
         {
             icon: <PeopleOutlineIcon sx={{ fontSize: 70 }}/>,
