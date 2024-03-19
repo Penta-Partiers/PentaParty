@@ -10,6 +10,9 @@ export function useInterval(callback, delay) {
     }, [callback]);
 
     useEffect( ()=> {
+        // Game has ended or hasn't been started yet
+        if (delay == null) return;
+
         const interval = setInterval(()=> callbackRef.current(), delay);
         return ()=> clearInterval(interval);
     }, [delay]);

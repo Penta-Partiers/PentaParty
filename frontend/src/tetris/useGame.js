@@ -1,100 +1,121 @@
-import { useEffect, useState } from 'react';
+// React
+import { useEffect, useState, useCallback } from 'react';
 
+// Custom hooks
 import { useInterval } from './useInterval';
-import { Shape, checkCompleteRows, checkEndGame, generateTetromino } from './tetris';
+import { useBoard } from './useBoard';
 
 export function useGame() {
-    const [board, setBoard] = useState(null);
+    const [{ board }, dispatchBoardState] = useBoard();
+    const [gameInProgress, setGameInProgress] = useState(false);
     const [score, setScore] = useState(0);
-    const [shapeQueue, setShapeQueue] = useState([]);
-    const [currentShape, setCurrentShape] = useState(null);
+    const [tickSpeed, setTickSpeed] = useState(null);
     const [userInput, setUserInput] = useState([]);
-    const [gameEnded, setGameEnded] = useState(false);
+
+    const startGame = useCallback(() => {
+        console.log("game started!");
+        setScore(0);
+        setGameInProgress(true);
+        setTickSpeed(1000);
+        dispatchBoardState({ type: 'start' });
+        window.addEventListener('keyup', keyUpEventListener);
+        window.addEventListener('keydown', keyDownEventListener);
+    }, [dispatchBoardState, keyUpEventListener, keyDownEventListener])
+
+    // Continuously run the game loop (if it's been started)
+    useInterval(() => {
+        if (!gameInProgress) {
+            return;
+        }
+        dispatchBoardState({ type: 'lower' });
+    }, tickSpeed);
+
+    // Continually check the board state to see if the game is over
+    useEffect(endGameCheck, [board]);
+
+    function endGameCheck() {
+        console.log("endGameCheck ran!") // Debug
+        if (checkEndGame(board)) {
+            setGameInProgress(false);
+            window.removeEventListener('keyup', keyUpEventListener);
+            window.removeEventListener('keydown', keyDownEventListener);
+        }
+    }
+
+    function checkEndGame(board) {
+        // Check all of the spaces in the top three rows (to allow room for shapes to spawn)
+        for (let j = 0; j < board[0].length; j++) {
+            if (board[board.length - 3][j] === 1 || board[board.length - 2][j] === 1 || board[board.length - 1][j] === 1) {
+                return true
+            }
+        }
+        return false
+    }
 
     // Whenever the board changes, update the score (if possible)
     useEffect(updateScore, [board]);
 
     function updateScore() {
+        console.log("updateScore ran!") // Debug
         setScore(score + checkCompleteRows(board));
     }
 
-    useEffect(endGame, [board]);
+    function checkCompleteRows(board) {
+        console.log("checkCompleteRows ran!")
+        var removedRows = []
 
-    function endGame() {
-        if (checkEndGame(board)) {
-            setGameEnded(true);
-        }
-    }
+        // Iterate from top to bottom
+        for (let i = board.length - 1; i >= 0; i--) {
+            for (let j = 0; j < board[i].length; j++) {
+                // If a row is incomplete, we check the next row
+                if (board[i][j] !== 1) {
+                    break
+                }
 
-    function updateShape() {
-        if (!gameEnded) {
-            if (currentShape.lowerShape(board)) {
-                setCurrentShape(getNextShape(board, shapeQueue))
+                // If the entire row is filled with 1s, we have a complete row
+                if (j === board[i].length - 1) {
+                    removedRows.unshift(i)
+                    //removeRow(board, i)
+                    dispatchBoardState({ type: 'removeRow', row: i })
+                }
             }
         }
-    }
 
-    function getNextShape(board, sq) {
-        if (sq.length === 0) {
-            return generateTetromino(board)
-        } else {
-            return setShapeQueue(sq.shift())
+        // removedCount = removedRows.length;
+
+        if (removedRows.length > 0) {
+            // lowerRows(board, removedRows)
+            dispatchBoardState({ type: 'removeRow', rows: removedRows });
         }
+
+        return removedRows.length * 100;
     }
 
-    function onKeyDown(e) {
+    function keyDownEventListener(e) {
         if ((e.key === "a" || e.key === "s" || e.key === "d" || e.key === "j" || e.key === "l") && userInput.indexOf(e.key) === -1) {
             setUserInput(userInput.push(e.key));
         }
     }
 
-    function onKeyUp(e) {
+    function keyUpEventListener(e) {
         if (userInput.indexOf(e.key) === -1) {
             return
         }
 
         // Choose what action to take
         if (e.key === "a") {
-            if (currentShape.translateShape(board, -1)) {
-                setCurrentShape(getNextShape(board, shapeQueue));
-            }
+            dispatchBoardState({ type: 'translate', direction: -1 });
         } else if (e.key === "s") {
-            if (currentShape.translateShape(board, 0)) {
-                setCurrentShape(getNextShape(board, shapeQueue));
-            }
+            dispatchBoardState({ type: 'translate', direction: 0 });
         } else if (e.key === "d") {
-            if (currentShape.translateShape(board, 1)) {
-                setCurrentShape(getNextShape(board, shapeQueue));
-            }
+            dispatchBoardState({ type: 'translate', direction: 1 });
         } else if (e.key === "j") {
-            setCurrentShape(currentShape.rotateShape(board, -1));
+            dispatchBoardState({ type: 'rotate', direction: -1 });
         } else if (e.key === "l") {
-            setCurrentShape(currentShape.rotateShape(board, 1));
+            dispatchBoardState({ type: 'rotate', direction: 1 });
         }
-        userInput.splice(userInput.indexOf(e.key), 1)
+        setUserInput(userInput.splice(userInput.indexOf(e.key), 1));
     }
 
-    const startGame = () => {
-        setBoard(initializeBoard());
-        useInterval(updateShape, 1000);
-    }
-    
-
-    return [
-        startGame,
-        board,
-        score,
-        gameEnded,
-        onKeyDown,
-        onKeyUp,
-    ]
-}
-
-function initializeBoard() {
-    var board = new Array(25);
-    for (let i = 0; i < board.length; i++) {
-        board[i] = new Array(13).fill(0);
-    }
-
-    return board;
+    return { startGame, board, score };
 }
