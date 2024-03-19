@@ -15,7 +15,7 @@ export default function PlayerView() {
                 alignItems="flex-start"
             >
                 <Grid item>
-                    {board && <GameBoard boardState={board} currentColor={currentColor} />}
+                    <GameBoard boardState={board} currentColor={currentColor} />
                 </Grid>
                 <Grid item>
                     <Box 

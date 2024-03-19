@@ -1,32 +1,57 @@
 //@ts-check
-import React, { useState } from 'react';
+// React
+import React, { useState, useContext } from 'react';
+
+// Routing
+import { useNavigate } from "react-router-dom";
+
+// Firebase
 import {  createUserWithEmailAndPassword  } from 'firebase/auth';
 import { auth } from '../firebase';
+
+// Authentication
+import { Context } from '../auth/AuthContext';
+
+// Material UI
 import { Grid, Typography, Box, TextField, Button } from '@mui/material';
 
+// Utilities
+import { validateEmail, validatePassword } from '../util/util';
+
 export default function SignUp() {
-    const [username, setUsername] = useState("");
+    const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [invalidEmail, setInvalidEmail] = useState(false);
+    const [invalidPassword, setInvalidPassword] = useState(false);
+    const { setUser } = useContext(Context);
+    const navigate = useNavigate();
 
-     async function handleSignUpClick(e) {
+    async function handleSignUpClick(e) {
         e.preventDefault()
+
+        // If email or password is invalid, display an error around the text fields
+        if (!validateEmail(email) || !validatePassword(password)) {
+            setInvalidEmail(!validateEmail(email));
+            setInvalidPassword(!validatePassword(password));
+            return;
+        }
      
-      await createUserWithEmailAndPassword(auth, username, password)
-        .then((userCredential) => {
-            const user = userCredential.user;
-            console.log(user);
-        })
-        .catch((error) => {
-            const errorCode = error.code;
-            const errorMessage = error.message;
-            console.log(errorCode, errorMessage);
-        });
+        await createUserWithEmailAndPassword(auth, email, password)
+            .then((userCredential) => {
+                setUser(userCredential.user);
+                navigate("/login");
+            })
+            .catch((error) => {
+                const errorCode = error.code;
+                const errorMessage = error.message;
+                console.log(errorCode, errorMessage);
+            });
     }
 
-    function handleUsernameChange(event) {
-        setUsername(event.target.value);
+    // Update the email and password while the user is typing
+    function handleEmailChange(event) {
+        setEmail(event.target.value);
     }
-
     function handlePasswordChange(event) {
         setPassword(event.target.value);
     }
@@ -41,31 +66,39 @@ export default function SignUp() {
             sx={{ minHeight: '100vh' }}
         >
             <Grid item xs={3}>
-            <Box 
+                <Typography variant="h2" textAlign={"center"} sx={{ my: 2 }}>PentaParty</Typography>
+                <Box 
                     width={400}
-                    height={400}
+                    height={"auto"}
                     display='flex'
                     flexDirection='column'
                     justifyContent='center'
                     alignItems='center'
-                    sx={{ boxShadow: 2, borderRadius: '16px' }}
+                    gap={2}
+                    sx={{ py: 4, boxShadow: 2, borderRadius: '16px' }}
                 >
-                    <Typography variant="h4" sx={{ mb: 4 }}>Sign Up</Typography>
+                    <Typography variant="h4">Sign Up</Typography>
+
                     <TextField 
-                        label="Username"
-                        value={username}
-                        onChange={handleUsernameChange}
-                        sx={{ width: '80%', mb: 2 }} />
+                        label="Email"
+                        value={email}
+                        onChange={handleEmailChange}
+                        error={invalidEmail}
+                        helperText={invalidEmail ? "Please enter a valid email." : ""}
+                        sx={{ width: '80%' }} />
                     <TextField 
                         label="Password" 
                         type="password" 
                         value={password}
+                        error={invalidPassword}
+                        helperText={invalidPassword ? "A valid password must have at least 6 characters." : ""}
                         onChange={handlePasswordChange}
-                        sx={{ width: '80%', mb: 3 }} />
+                        sx={{ width: '80%' }} />
+
                     <Button 
                         variant="contained"
                         onClick={handleSignUpClick}
-                        sx={{ mb: 1 }}>
+                    >
                             Sign up
                     </Button>
                     <Button 

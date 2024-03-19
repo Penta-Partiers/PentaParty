@@ -22,16 +22,22 @@ export function useBoard() {
         // Reducer function
         boardStateReducer, 
         // Initial state values
-        {},
-        // Initializer function
-        () => {
-            const state = {
-                board: initializeEmptyBoard(),
-                currentShapePoints: null,
-                shapeQueue: [],
-                currentColor: "red",
-            };
-            return state;
+        // {},
+        // // Initializer function
+        // () => {
+        //     const state = {
+        //         board: initializeEmptyBoard(),
+        //         currentShapePoints: null,
+        //         shapeQueue: [],
+        //         currentColor: "red",
+        //     };
+        //     return state;
+        // }
+        {
+            board: initializeEmptyBoard(),
+            currentShapePoints: null,
+            shapeQueue: [],
+            currentColor: "red",
         }
     );
 
