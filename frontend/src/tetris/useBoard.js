@@ -353,7 +353,7 @@ function generateTetromino() {
 }
 
 // Initialize an empty board with each cell set to 0
-function initializeEmptyBoard() {
+export function initializeEmptyBoard() {
     var board = new Array(NUM_ROWS);
     for (let i = 0; i < board.length; i++) {
         board[i] = new Array(NUM_COLS).fill(0);
