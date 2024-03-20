@@ -1,3 +1,6 @@
+// Routing
+import { useNavigate } from "react-router-dom";
+
 // Material UI
 import { Typography, Button } from '@mui/material';
 import AddBoxOutlinedIcon from '@mui/icons-material/AddBoxOutlined';
@@ -5,21 +8,29 @@ import VideogameAssetOutlinedIcon from '@mui/icons-material/VideogameAssetOutlin
 import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline';
 
 export default function Home() {
+    const navigate = useNavigate();
+
     const buttonsList = [
         {
             icon: <AddBoxOutlinedIcon sx={{ fontSize: 70 }}/>,
             label: "Create Lobby",
-            link: "/",
+            onClick: () => {
+                navigate("/lobby", { state: { isHost: true } });
+            },
         },
         {
             icon: <VideogameAssetOutlinedIcon sx={{ fontSize: 70 }}/>,
             label: "Join Lobby",
-            link: "/join-lobby",
+            onClick: () => {
+                navigate("/join-lobby");
+            },
         },
         {
             icon: <PeopleOutlineIcon sx={{ fontSize: 70 }}/>,
             label: "Friends",
-            link: "/friends",
+            onClick: () => {
+                navigate("/friends");
+            },
         }
     ]
 
@@ -33,7 +44,7 @@ export default function Home() {
                 <div className="flex justify-center space-x-12">
                     {buttonsList.map((data, index) => (
                         <div key={index} className="flex flex-col items-center space-y-2">
-                            <Button variant="outlined" href={data.link} sx={{ borderRadius: 4 }} className="w-[100px] aspect-square flex items-center justify-center">
+                            <Button variant="outlined" onClick={data.onClick} sx={{ borderRadius: 4 }} className="w-[100px] aspect-square flex items-center justify-center">
                                 {data.icon}
                             </Button>
                             <Typography variant="subtitle1">{data.label}</Typography>

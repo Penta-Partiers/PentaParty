@@ -15,6 +15,7 @@ import SignUp from './pages/SignUp';
 import PlayerView from './pages/PlayerView';
 import Friends from "./pages/Friends";
 import JoinLobby from "./pages/JoinLobby";
+import Lobby from "./pages/Lobby";
 
 // References: 
 // - https://reactrouter.com/en/main/routers/create-browser-router
@@ -47,6 +48,10 @@ const router = createBrowserRouter([
   {
     path: "/join-lobby",
     Component: JoinLobby,
+  },
+  {
+    path: "/lobby",
+    Component: Lobby,
   },
 ]);
 
