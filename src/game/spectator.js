@@ -9,8 +9,10 @@ var widget = new Array(5)
 for (let i = 0; i < widget.length; i++) {
     widget[i] = new Array(5).fill(0)
 }
+// Number of milliseconds that the spectator has to submit a shape
+const DEADLINE_IN_MILLISECONDS = 30000
 // The deadline for the spectator to submit the shape
-var submitTime = Date.now() + 30000
+var submitTime = Date.now() + DEADLINE_IN_MILLISECONDS
 var currentPlayer = -1
 
 /**
@@ -32,7 +34,7 @@ function resetState() {
             widget[i][j] = 0
         }
     }
-    submitTime = Date.now() + 30000
+    submitTime = Date.now() + DEADLINE_IN_MILLISECONDS
 }
 
 /**
