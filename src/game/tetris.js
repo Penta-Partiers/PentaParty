@@ -367,7 +367,7 @@ function sleep(time) {
 function startTetris() {
     // Initialize the game
     /*
-        The board is a 13 x 25 grid that represents the state of the game. It will be filled with 1s (denoting a block) and 0s (denoting an empty space).
+        The board is a 13 x 25 grid that represents the state of the game.
         (0, 0) denotes the element in the bottom left of the grid.
         It has values as follows:
             - 0: An empty space
