@@ -50,7 +50,7 @@ const router = createBrowserRouter([
     element: <ProtectedRoute><JoinLobby /></ProtectedRoute>,
   },
   {
-    path: "/lobby",
+    path: "/lobby/:lobbyCode",
     element: <ProtectedRoute><Lobby /></ProtectedRoute>,
   },
 ]);

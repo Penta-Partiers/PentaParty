@@ -15,7 +15,9 @@ export default function Home() {
             icon: <AddBoxOutlinedIcon sx={{ fontSize: 70 }}/>,
             label: "Create Lobby",
             onClick: () => {
-                navigate("/lobby", { state: { isHost: true } });
+                // TODO: generate lobby code, then redirect
+                var tempLobbyCode = "ABC123";
+                navigate("/lobby/" + tempLobbyCode, { state: { isHost: true } });
             },
         },
         {
