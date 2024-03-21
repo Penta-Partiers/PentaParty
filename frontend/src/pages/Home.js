@@ -10,7 +10,7 @@ import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline';
 export default function Home() {
     const navigate = useNavigate();
 
-    const buttonsList = [
+    const mainButtonsList = [
         {
             icon: <AddBoxOutlinedIcon sx={{ fontSize: 70 }}/>,
             label: "Create Lobby",
@@ -42,7 +42,7 @@ export default function Home() {
                     <Typography variant="h2">1000</Typography>
                 </div>
                 <div className="flex justify-center space-x-12">
-                    {buttonsList.map((data, index) => (
+                    {mainButtonsList.map((data, index) => (
                         <div key={index} className="flex flex-col items-center space-y-2">
                             <Button variant="outlined" onClick={data.onClick} sx={{ borderRadius: 4 }} className="w-[100px] aspect-square flex items-center justify-center">
                                 {data.icon}
