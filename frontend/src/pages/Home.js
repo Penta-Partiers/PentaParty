@@ -1,6 +1,9 @@
 // Routing
 import { useNavigate } from "react-router-dom";
 
+// Authentication
+import { signOut, getAuth } from "firebase/auth";
+
 // Material UI
 import { Typography, Button } from '@mui/material';
 import AddBoxOutlinedIcon from '@mui/icons-material/AddBoxOutlined';
@@ -9,6 +12,13 @@ import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline';
 
 export default function Home() {
     const navigate = useNavigate();
+
+    const handleSignOut = () => {
+        const auth = getAuth();
+        signOut(auth)
+            .then(() => navigate("/login"))
+            .catch((error) => console.error(error));
+    }
 
     const mainButtonsList = [
         {
@@ -53,6 +63,7 @@ export default function Home() {
                         </div>
                     ))}
                 </div>
+                <Button variant="outlined" onClick={handleSignOut}>Sign Out</Button>
             </div>
         </div>
     )
