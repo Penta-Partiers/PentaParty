@@ -39,19 +39,19 @@ const router = createBrowserRouter([
   },
   {
     path: "/player",
-    Component: PlayerView,
+    element: <ProtectedRoute><PlayerView /></ProtectedRoute>,
   },
   {
     path: "/friends",
-    Component: Friends,
+    element: <ProtectedRoute><Friends /></ProtectedRoute>,
   },
   {
     path: "/join-lobby",
-    Component: JoinLobby,
+    element: <ProtectedRoute><JoinLobby /></ProtectedRoute>,
   },
   {
     path: "/lobby",
-    Component: Lobby,
+    element: <ProtectedRoute><Lobby /></ProtectedRoute>,
   },
 ]);
 
