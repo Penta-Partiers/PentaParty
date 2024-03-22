@@ -1,11 +1,11 @@
 // React
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 
 // Routing
 import { useNavigate } from "react-router-dom";
 
 // Material UI
-import { Grid, Tabs, Tab, Button, Paper, Typography, TextField, Alert, CircularProgress } from '@mui/material';
+import { Grid, Button, Typography, TextField } from '@mui/material';
 
 export default function JoinLobby() {
     const [lobbyCode, setLobbyCode] = useState("");
