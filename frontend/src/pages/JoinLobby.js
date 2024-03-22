@@ -20,8 +20,10 @@ export default function JoinLobby() {
     }
 
     function handleJoinLobbyClick(e) {
-        // TODO: Verify valid lobby code
-        navigate("/lobby/" + lobbyCode, { state: { isHost: false } });
+        // TODO: Verify lobby code with backend, display error message if invalid
+        if (lobbyCode != "") {
+            navigate("/lobby/" + lobbyCode, { state: { isHost: false } });
+        }
     }
 
     return (

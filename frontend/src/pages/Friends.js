@@ -180,8 +180,11 @@ export default function Friends() {
                 content = null;
         }
 
+        // For the friends list and pending friends list, add a grey background
+        const backgroundColor = (tabIndex == 0 || tabIndex == 2) ? "bg-slate-300 border border-slate-300" : "";
+
         return (
-            <div className="h-80 w-[75%] overflow-auto p-1">
+            <div className={"h-80 w-[70%] overflow-auto p-1 " + backgroundColor}>
                 {content}
             </div>
         )

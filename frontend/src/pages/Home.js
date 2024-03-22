@@ -53,7 +53,7 @@ export default function Home() {
                     <Typography variant="h4">Highest Score</Typography>
                     <Typography variant="h2">1000</Typography>
                 </div>
-                <div className="flex justify-center space-x-12">
+                <div className="flex justify-center space-x-20">
                     {mainButtonsList.map((data, index) => (
                         <div key={index} className="flex flex-col items-center space-y-2">
                             <Button variant="outlined" onClick={data.onClick} sx={{ borderRadius: 4 }} className="w-[100px] aspect-square flex items-center justify-center">
