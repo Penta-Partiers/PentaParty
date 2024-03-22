@@ -38,7 +38,8 @@ export default function JoinLobby() {
                     <Typography variant="h4">Enter lobby code:</Typography>
                     <TextField 
                         onChange={handleTextFieldChange}
-                        className="w-full" />
+                        className="w-[60%]"
+                        sx={{ input: {textAlign: "center", fontSize: 40} }} />
                     <div className="flex justify-center space-x-12">
                         <Button variant="outlined" onClick={backClick}>Back</Button>
                         <Button variant="contained" onClick={handleJoinLobbyClick}>Join Lobby</Button>
