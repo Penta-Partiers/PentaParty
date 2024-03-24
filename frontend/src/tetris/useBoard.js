@@ -1,7 +1,7 @@
 import { useReducer } from 'react';
 
-const NUM_ROWS = 25;
-const NUM_COLS = 13;
+export const NUM_ROWS = 25;
+export const NUM_COLS = 13;
 
 /*
 Custom React hook to handle all changes to the board state, specifically:
@@ -60,7 +60,7 @@ action.type can either be:
     - 'lowerRows'
         - includes action.rows
 */
-function boardStateReducer(state, action) {
+export function boardStateReducer(state, action) {
     // Create a deep clone so that React can detect this as a new state
     const newState = JSON.parse(JSON.stringify(state));
 
@@ -112,22 +112,26 @@ function boardStateReducer(state, action) {
     return newState;
 }
 
-function lowerRows(board, rows) {
+export function lowerRows(board, rows) {
+    // rows array must be in descending order (from the bottom of the board to the top, with the value decreasing because row 0 is on the top)
+    rows.sort()
+    rows.reverse()
+
     // Remove the row from the board
     var removedCount = 0
     for (let i = 0; i < rows.length; i++) {
         // As we remove rows, the index will change, so we need to compensate for that
-        board.splice(rows[i] - removedCount, 1)
+        board.splice(rows[i] + removedCount, 1)
         board.unshift(new Array(board[0].length).fill(0))
         removedCount++
     }
 }
 
-function removeRow(board, row) {
+export function removeRow(board, row) {
     board[row].fill(0)
 }
 
-function getNextShape(shapeQueue) {
+export function getNextShape(shapeQueue) {
     if (shapeQueue.length === 0) {
         return generateTetromino()
     } else {
@@ -135,7 +139,7 @@ function getNextShape(shapeQueue) {
     }
 }
 
-function renderNewShape(board, points) {
+export function renderNewShape(board, points) {
     for (let i = 0; i < points.length; i++) {
         let rowNumber = points[i][0];
         let colNumber = points[i][1]; 
@@ -143,7 +147,7 @@ function renderNewShape(board, points) {
     }
 }
 
-function translateShape(board, points, direction) {
+export function translateShape(board, points, direction) {
     // If the shape is being shifted downwards
     if (direction === 0) {
         return lowerShape(board, points);
@@ -186,7 +190,7 @@ function translateShape(board, points, direction) {
     return false
 }
 
-function rotateShape(board, points, direction) {
+export function rotateShape(board, points, direction) {
     // Quick error check to verify values
     if (direction !== -1 && direction !== 1) {
         console.log("[Tetris] Rotate shape received an invalid direction of: " + direction)
@@ -276,7 +280,7 @@ function rotateShape(board, points, direction) {
     }
 }
 
-function lowerShape(board, points) {
+export function lowerShape(board, points) {
     // Check if there's room beneath the shape
     for (let p = 0; p < points.length; p++) {
         let rowNumber = points[p][0]
@@ -309,7 +313,7 @@ function lowerShape(board, points) {
     return false;
 }
 
-function freeze(board, points) {
+export function freeze(board, points) {
     for (let p = 0; p < points.length; p++) {
         let rowNumber = points[p][0]
         let columnNumber = points[p][1]
@@ -320,7 +324,7 @@ function freeze(board, points) {
 }
 
 // returns a shape-points representation
-function generateTetromino() {
+export function generateTetromino() {
     // There are 5 possible tetrominos
     var shapeChoice = Math.floor(Math.random() * 5);
     var middleColumn = Math.floor(NUM_COLS / 2);
@@ -362,7 +366,7 @@ export function initializeEmptyBoard() {
 }
 
 // Possible colors: red, cyan, blue, green, purple, orange
-function selectNextColor() {
+export function selectNextColor() {
     var colorChoice = Math.floor(Math.random() * 6);
 
     switch (colorChoice) {
