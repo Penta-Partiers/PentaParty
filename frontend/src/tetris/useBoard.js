@@ -22,17 +22,6 @@ export function useBoard() {
         // Reducer function
         boardStateReducer, 
         // Initial state values
-        // {},
-        // // Initializer function
-        // () => {
-        //     const state = {
-        //         board: initializeEmptyBoard(),
-        //         currentShapePoints: null,
-        //         shapeQueue: [],
-        //         currentColor: "red",
-        //     };
-        //     return state;
-        // }
         {
             board: initializeEmptyBoard(),
             currentShapePoints: null,
@@ -81,10 +70,12 @@ function boardStateReducer(state, action) {
             }
         case 'lower':
             if (lowerShape(newState.board, newState.currentShapePoints)) {
-                let nextShape = getNextShape(newState.shapeQueue);
-                renderNewShape(newState.board, nextShape);
-                newState.currentShapePoints = nextShape;
-                newState.currentColor = selectNextColor();
+                if (!checkEndGame(newState.board)) {
+                    let nextShape = getNextShape(newState.shapeQueue);
+                    renderNewShape(newState.board, nextShape);
+                    newState.currentShapePoints = nextShape;
+                    newState.currentColor = selectNextColor();
+                }
             }
             break;
         case 'translate':
@@ -117,7 +108,7 @@ function lowerRows(board, rows) {
     var removedCount = 0
     for (let i = 0; i < rows.length; i++) {
         // As we remove rows, the index will change, so we need to compensate for that
-        board.splice(rows[i] - removedCount, 1)
+        board.splice(rows[i] + removedCount, 1)
         board.unshift(new Array(board[0].length).fill(0))
         removedCount++
     }
@@ -231,13 +222,13 @@ function rotateShape(board, points, direction) {
         // Finalize the rotation by reversing either the rows or the columns
         // Due to the transpose, the maximum index for the row will be the calculated using the range of columns (X coordinate) of the original matrix
         if (direction === -1) {
-            // Reverse columns for counter clockwise
-            var maxColumnIndex = maxY - minY
-            columnNumber = maxColumnIndex - columnNumber
-        } else {
             // Reverse rows for clockwise
             var maxRowIndex = maxX - minX
             rowNumber = maxRowIndex - rowNumber
+        } else {
+            // Reverse columns for counter clockwise
+            var maxColumnIndex = maxY - minY
+            columnNumber = maxColumnIndex - columnNumber
         }
 
         // Add back minimum of each dimension to get actual coordinates
@@ -379,4 +370,14 @@ function selectNextColor() {
         default:
             return "orange";
     }
+}
+
+export function checkEndGame(board) {
+    // Check all of the spaces in the top three rows (to allow room for shapes to spawn)
+    for (let j = 0; j < board[0].length; j++) {
+        if (board[0][j] === 1 || board[1][j] === 1 || board[2][j] === 1) {
+            return true
+        }
+    }
+    return false
 }
