@@ -66,9 +66,9 @@ export function useGame() {
         } else if (e.key === "d") {
             dispatchBoardState({ type: 'translate', direction: 1 });
         } else if (e.key === "l") {
-            dispatchBoardState({ type: 'rotate', direction: -1 });
-        } else if (e.key === "j") {
             dispatchBoardState({ type: 'rotate', direction: 1 });
+        } else if (e.key === "j") {
+            dispatchBoardState({ type: 'rotate', direction: -1 });
         }
         setUserInput(userInput.splice(userInput.indexOf(e.key), 1));     
     }, [])
