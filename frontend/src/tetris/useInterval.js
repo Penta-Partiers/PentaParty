@@ -1,4 +1,4 @@
-import React, {useEffect, useRef} from 'react';
+import { useEffect, useRef } from 'react';
 
 // Referenced the following for how to set intervals in React:
 // https://itnext.io/how-to-work-with-intervals-in-react-hooks-f29892d650f2

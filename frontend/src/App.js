@@ -13,6 +13,9 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
 import PlayerView from './pages/PlayerView';
+import Friends from "./pages/Friends";
+import JoinLobby from "./pages/JoinLobby";
+import Lobby from "./pages/Lobby";
 import SpectatorView from "./pages/SpectatorView";
 import GameSummary from "./pages/GameSummary";
 
@@ -38,7 +41,19 @@ const router = createBrowserRouter([
   },
   {
     path: "/player",
-    Component: PlayerView,
+    element: <ProtectedRoute><PlayerView /></ProtectedRoute>,
+  },
+  {
+    path: "/friends",
+    element: <ProtectedRoute><Friends /></ProtectedRoute>,
+  },
+  {
+    path: "/join-lobby",
+    element: <ProtectedRoute><JoinLobby /></ProtectedRoute>,
+  },
+  {
+    path: "/lobby/:lobbyCode",
+    element: <ProtectedRoute><Lobby /></ProtectedRoute>,
   },
   {
     path: "/spectator",
@@ -47,7 +62,7 @@ const router = createBrowserRouter([
   {
     path: "/game-summary",
     Component: GameSummary,
-  }
+  },
 ]);
 
 function App() {  
