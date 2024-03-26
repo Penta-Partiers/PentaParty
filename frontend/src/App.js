@@ -16,6 +16,8 @@ import PlayerView from './pages/PlayerView';
 import Friends from "./pages/Friends";
 import JoinLobby from "./pages/JoinLobby";
 import Lobby from "./pages/Lobby";
+import SpectatorView from "./pages/SpectatorView";
+import GameSummary from "./pages/GameSummary";
 
 // References: 
 // - https://reactrouter.com/en/main/routers/create-browser-router
@@ -52,6 +54,14 @@ const router = createBrowserRouter([
   {
     path: "/lobby/:lobbyCode",
     element: <ProtectedRoute><Lobby /></ProtectedRoute>,
+  },
+  {
+    path: "/spectator",
+    Component: SpectatorView,
+  },
+  {
+    path: "/game-summary",
+    Component: GameSummary,
   },
 ]);
 
