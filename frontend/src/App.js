@@ -13,6 +13,7 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
 import PlayerView from './pages/PlayerView';
+import SpectatorView from "./pages/SpectatorView";
 
 // References: 
 // - https://reactrouter.com/en/main/routers/create-browser-router
@@ -37,6 +38,10 @@ const router = createBrowserRouter([
   {
     path: "/player",
     Component: PlayerView,
+  },
+  {
+    path: "/spectator",
+    Component: SpectatorView,
   }
 ]);
 
