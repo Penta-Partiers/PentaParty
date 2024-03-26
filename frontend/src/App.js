@@ -14,6 +14,7 @@ import Login from './pages/Login';
 import SignUp from './pages/SignUp';
 import PlayerView from './pages/PlayerView';
 import SpectatorView from "./pages/SpectatorView";
+import GameSummary from "./pages/GameSummary";
 
 // References: 
 // - https://reactrouter.com/en/main/routers/create-browser-router
@@ -42,6 +43,10 @@ const router = createBrowserRouter([
   {
     path: "/spectator",
     Component: SpectatorView,
+  },
+  {
+    path: "/game-summary",
+    Component: GameSummary,
   }
 ]);
 
