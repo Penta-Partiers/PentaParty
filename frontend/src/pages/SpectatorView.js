@@ -1,8 +1,8 @@
 // React
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 
 // Material UI
-import { Grid, Box, Typography, Button } from '@mui/material';
+import { Grid, Typography, Button } from '@mui/material';
 
 // Components
 import GameBoard from '../components/GameBoard';

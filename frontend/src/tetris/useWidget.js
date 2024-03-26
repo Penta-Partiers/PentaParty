@@ -127,7 +127,7 @@ export function validateShape(widget) {
  * Returns an empty widget.
  * @returns {[[number]]}
  */
-function clearWidget() {
+export function clearWidget() {
     var clearedWidget = new Array(5);
     for (let i = 0; i < clearedWidget.length; i++) {
         clearedWidget[i] = new Array(5).fill(0)
