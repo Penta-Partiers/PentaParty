@@ -11,6 +11,7 @@ import Widget from "../components/Widget";
 import { useWidget } from "../tetris/useWidget";
 
 export default function SpectatorView() {
+    // TODO: Temporary, will get board state from websocket server later
     const [board, setBoard] = useState(() => {
         var board = new Array(25);
         for (let i = 0; i < board.length; i++) {
