@@ -9,3 +9,9 @@ export const validateEmail = (email) => {
 export const validatePassword = (password) => {
     return password.length >= 6;
 }
+
+// Reference for generating random alphanumeric string:
+// https://stackoverflow.com/questions/10726909/random-alpha-numeric-string-in-javascript
+export const generateLobbyCode = () => {
+    return Array.from(Array(6), () => Math.floor(Math.random() * 36).toString(36)).join('').toUpperCase();
+}
