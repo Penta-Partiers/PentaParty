@@ -8,7 +8,8 @@ import WebSocket from 'ws';
 export function sendStartMessage(ws) {
   let msg = {
     receivers: [],
-    command: "start"
+    command: "start",
+    msg: {}
   }
 
   ws.send(JSON.stringify(msg))
@@ -18,7 +19,7 @@ export function sendStartMessage(ws) {
  * 
  * @param {WebSocket} ws 
  * @param {string} uuid 
- */
+ */ 
 export function sendEndMessage(ws, uuid) {
   let msg = {
     receivers: [],
@@ -97,6 +98,7 @@ export function sendScoreMessage(ws, uuid, score) {
     receivers: [],
     command: "score",
     msg: {
+      "UUID": uuid,
       "score": score
     }
   }
