@@ -27,6 +27,7 @@ const wss = new WebSocketServer({ port: Number(wsPort) });
 
 logger.info("start running websocket server")
 wss.on('connection', function connection(ws) {
+  logger.info("New client connected");
   ws.on('error', logger.error);
 
   ws.on('message', function message(data, isBinary) {
@@ -41,4 +42,5 @@ wss.on('connection', function connection(ws) {
   ws.on("close", (code, reason) => {
     logger.info(`Client disconnected, code [${code}], reason: [${reason.toString()}]`)
   } )
+
 });
