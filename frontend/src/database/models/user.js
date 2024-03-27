@@ -110,7 +110,7 @@ export class User {
   static fromFirestore(snapshot, options) {
     const data = snapshot.data(options);
     return new User(
-      snapshot.uuid,
+      snapshot.id,
       data.email,
       data.username,
       data.friends,
