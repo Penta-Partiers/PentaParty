@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 // Firebase
 import {  createUserWithEmailAndPassword  } from 'firebase/auth';
 import { auth } from '../firebase';
+import { User, createUser } from "../database/models/user";
 
 // Authentication
 import { Context } from '../auth/AuthContext';
@@ -21,11 +22,12 @@ import { validateEmail, validatePassword } from '../util/util';
 export default function SignUp() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [username, setUsername] = useState("");
     const [invalidEmail, setInvalidEmail] = useState(false);
     const [invalidPassword, setInvalidPassword] = useState(false);
     const [emailHelperText, setEmailHelperText] = useState("Please enter a valid email.");
 
-    const { setUser } = useContext(Context);
+    const { setUser, setUserDb } = useContext(Context);
     const navigate = useNavigate();
 
     async function handleSignUpClick(e) {
@@ -40,9 +42,13 @@ export default function SignUp() {
         }
      
         await createUserWithEmailAndPassword(auth, email, password)
-            .then((userCredential) => {
+            .then(async (userCredential) => {
                 setUser(userCredential.user);
-                navigate("/login");
+                let userDb = new User(userCredential.user.uid, email, username);
+                setUserDb(userDb);
+                await createUser(userDb)
+                    .then(() => navigate("/login"))
+                    .catch((error) => console.log(error));
             })
             .catch((error) => {
                 const errorCode = error.code;
@@ -53,9 +59,12 @@ export default function SignUp() {
             });
     }
 
-    // Update the email and password while the user is typing
+    // Update the email, username, and password while the user is typing
     function handleEmailChange(event) {
         setEmail(event.target.value);
+    }
+    function handleUsernameChange(event) {
+        setUsername(event.target.value);
     }
     function handlePasswordChange(event) {
         setPassword(event.target.value);
@@ -91,6 +100,11 @@ export default function SignUp() {
                         error={invalidEmail}
                         helperText={invalidEmail ? emailHelperText : ""}
                         sx={{ width: '80%' }} />
+                    <TextField
+                        label="Username"
+                        value={username}
+                        onChange={handleUsernameChange}
+                        sx={{ width: '80%' }}/>
                     <TextField 
                         label="Password" 
                         type="password" 

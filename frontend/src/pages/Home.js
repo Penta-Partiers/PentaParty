@@ -1,3 +1,9 @@
+// React
+import { useContext } from "react";
+
+// User Context
+import { Context } from "../auth/AuthContext";
+
 // Routing
 import { useNavigate } from "react-router-dom";
 
@@ -11,6 +17,8 @@ import VideogameAssetOutlinedIcon from '@mui/icons-material/VideogameAssetOutlin
 import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline';
 
 export default function Home() {
+    const {user, userDb} = useContext(Context);
+
     const navigate = useNavigate();
 
     const handleSignOut = () => {

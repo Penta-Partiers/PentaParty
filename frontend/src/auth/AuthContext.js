@@ -18,6 +18,7 @@ export const Context = createContext();
 
 export function AuthContext({ children }) {
     const [user, setUser] = useState();
+    const [userDb, setUserDb] = useState();
     // Important for when a page is refreshed to make sure
     // that it's loaded first before rendering anything else.
     const [loading, setLoading] = useState(true);
@@ -46,7 +47,9 @@ export function AuthContext({ children }) {
     // function to update the user
     const values = {
         user: user,
-        setUser: setUser
+        setUser: setUser,
+        userDb: userDb,
+        setUserDb: setUserDb,
     }
     
     // Only display the children content once the authentication is done loading,
