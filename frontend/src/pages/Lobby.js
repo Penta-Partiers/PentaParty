@@ -26,6 +26,7 @@ export default function Lobby() {
     const [isHost, setIsHost] = useState(state.isHost)
     const [modalOpen, setModalOpen] = useState(false);
     const [displayError, setDisplayError] = useState(false);
+    const [errorMessage, setErrorMessage] = useState("");
 
     const friendsList = [
         "friend_01",
@@ -60,6 +61,9 @@ export default function Lobby() {
 
     async function handleJoinPlayersClick() {
         if (lobby.players.length >= MAX_PLAYERS) {
+            console.log("Max number of players reached, cannot join.");
+            setDisplayError(true);
+            setErrorMessage("Max number of players reached!");
             return;
         }
         else {
@@ -96,6 +100,7 @@ export default function Lobby() {
         }
         else {
             setDisplayError(true);
+            setErrorMessage("Invalid lobby arrangement!");
         }
     }
 
@@ -110,7 +115,7 @@ export default function Lobby() {
                 <div className='flex flex-col items-center w-full p-2 space-y-8'>
                     {displayError &&
                         <Alert severity="error" onClose={() => setDisplayError(false)}>
-                            Invalid lobby arrangement!
+                            {errorMessage}
                         </Alert>
                     }
 
