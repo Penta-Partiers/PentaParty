@@ -1,10 +1,32 @@
+// Material UI
 import { Grid, Box, Typography, Button } from '@mui/material';
 
+// Components
 import GameBoard from '../components/GameBoard';
+
+// Custom hooks / game logic
 import { useGame } from '../tetris/useGame';
+
+// Websockets
+import useWebSocket from 'react-use-websocket';
+
+// Environment variables
+import { getEnvOrExit } from '../config.js';
 
 export default function PlayerView() {
     const { startGame, board, score, currentColor } = useGame();
+
+    const wsPort = getEnvOrExit("REACT_APP_WS_PORT");
+
+    // TODO: set up websocket connection
+    const { sendJsonMessage, readyState } = useWebSocket(
+        "ws://localhost:" + wsPort,
+        {
+            onOpen: () => {
+                console.log("WebSocket connection established!");
+            },
+        }
+    )
 
     return (
         <div className="min-h-screen flex justify-center items-center">
