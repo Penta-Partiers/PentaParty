@@ -13,11 +13,14 @@ import { Context } from "../auth/AuthContext";
 // Database
 import { getLobbyByCode, joinSpectators } from '../database/models/lobby';
 
+const LOBBY_LIMIT = 24;
+
 export default function JoinLobby() {
     const {userDb, setLobby} = useContext(Context);
 
     const [lobbyCode, setLobbyCode] = useState("");
     const [displayError, setDisplayError] = useState(false);
+    const [errorMessage, setErrorMessage] = useState("");
 
     const navigate = useNavigate();
 
@@ -34,12 +37,18 @@ export default function JoinLobby() {
             await getLobbyByCode(lobbyCode.toUpperCase())
                 .then(async (lobby) => {
                     if (lobby) {
+                        let currentNumberOfPlayers = lobby.players.length + lobby.spectators.length;
+                        if (currentNumberOfPlayers >= LOBBY_LIMIT) {
+                            setDisplayError(true);
+                            setErrorMessage("Lobby is full!");
+                        }
                         setLobby(lobby);
                         await joinSpectators(lobby, userDb.uuid, userDb.username);
                         navigate("/lobby/" + lobbyCode.toUpperCase(), { state: { isHost: false } });
                     }
                     else {
                         setDisplayError(true);
+                        setErrorMessage("Invalid lobby code!");
                     }
                 })
                 .catch((error) => console.log(error));
@@ -59,7 +68,7 @@ export default function JoinLobby() {
                         <Alert
                             severity="error"
                             onClose={() => setDisplayError(false)}>
-                            Invalid lobby code!
+                            {errorMessage}
                         </Alert>
                     }
                     <Typography variant="h4">Enter lobby code:</Typography>
