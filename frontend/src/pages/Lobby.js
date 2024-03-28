@@ -15,6 +15,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 // Material UI
 import { Grid, Button, Paper, Typography, Modal, Alert } from '@mui/material';
 
+const MAX_PLAYERS = 4;
+
 export default function Lobby() {
     const {userDb, lobby, setLobby} = useContext(Context);
 
@@ -57,7 +59,7 @@ export default function Lobby() {
     }, []);
 
     async function handleJoinPlayersClick() {
-        if (lobby.players.length >= 4) {
+        if (lobby.players.length >= MAX_PLAYERS) {
             return;
         }
         else {
