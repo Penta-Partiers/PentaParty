@@ -13,5 +13,6 @@ export const validatePassword = (password) => {
 // Reference for generating random alphanumeric string:
 // https://stackoverflow.com/questions/10726909/random-alpha-numeric-string-in-javascript
 export const generateLobbyCode = () => {
+    // TODO: Check for duplicated lobby code just to be sure
     return Array.from(Array(6), () => Math.floor(Math.random() * 36).toString(36)).join('').toUpperCase();
 }
