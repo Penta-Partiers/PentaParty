@@ -1,6 +1,10 @@
+// Material UI
 import { Grid, Box, Typography, Button } from '@mui/material';
 
+// Components
 import GameBoard from '../components/GameBoard';
+
+// Custom hooks / game logic
 import { useGame } from '../tetris/useGame';
 
 export default function PlayerView() {

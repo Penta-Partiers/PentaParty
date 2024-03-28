@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 // Firebase
 import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
+import { User, createUser, getUser } from "../database/models/user";
 
 // Authentication
 import { Context } from '../auth/AuthContext';
@@ -17,20 +18,26 @@ import { Grid, Typography, Box, TextField, Button, Alert, Divider } from '@mui/m
 import GoogleIcon from '@mui/icons-material/Google';
 
 export default function Login() {
+    const { setUser, setUserDb } = useContext(Context);
+
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [displayErrorMessage, setDisplayErrorMessage] = useState(false);
 
-    const { setUser } = useContext(Context);
     const navigate = useNavigate();
 
     function handleLoginClick(e) {
         e.preventDefault();
 
         signInWithEmailAndPassword(auth, email, password)
-        .then((userCredential) => {
-            setUser(userCredential.user);
-            navigate("/home");
+        .then(async (userCredential) => {
+            await getUser(userCredential.user.uid)
+                .then((userDb) => {
+                    setUser(userCredential.user);
+                    setUserDb(userDb);
+                    navigate("/home");
+                })
+                .catch((error) => console.log(error));
         })
         .catch((error) => {
             const errorCode = error.code;
@@ -53,9 +60,28 @@ export default function Login() {
     const signInWithGoogle = async () => {
         try {
             signInWithPopup(auth, googleProvider)
-            .then((userCredential) => {
-                setUser(userCredential.user);
-                navigate("/home");
+            .then(async (userCredential) => {
+                await getUser(userCredential.user.uid)
+                    .then(async (userDb) => {
+                        // User hasn't been added to db yet, so do that first
+                        if (userDb == null) {
+                            userDb = new User(userCredential.user.uid, userCredential.user.email, userCredential.user.displayName);
+                            await createUser(userDb)
+                                .then(() => {
+                                    setUser(userCredential.user);
+                                    setUserDb(userDb);
+                                    navigate("/home");
+                                })
+                                .catch((error) => console.log(error));
+                        }
+                        // Otherwise, User already exists in the database
+                        else {
+                            setUser(userCredential.user);
+                            setUserDb(userDb);
+                            navigate("/home");
+                        }
+                    })
+                    .catch((error) => console.log(error));
             })
         } 
         catch (err) {

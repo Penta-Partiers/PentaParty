@@ -8,6 +8,7 @@ import { Grid, Typography, Button } from '@mui/material';
 import GameBoard from '../components/GameBoard';
 import Widget from "../components/Widget";
 
+// Custom hooks / game logic
 import { useWidget } from "../tetris/useWidget";
 
 export default function SpectatorView() {

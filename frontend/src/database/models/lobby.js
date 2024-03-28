@@ -10,6 +10,7 @@ import {
   updateDoc,
   arrayUnion,
   addDoc,
+  arrayRemove,
 } from "firebase/firestore";
 import { db } from "../../firebase.js";
 import { User } from "./user.js";
@@ -17,7 +18,7 @@ import { User } from "./user.js";
 const LOBBY_CODE_LENGTH = 6;
 
 export class Lobby {
-  constructor(code, hostUuid, uuid, users) {
+  constructor(code, hostUuid, uuid, players, spectators, started) {
     if (typeof code !== "string" && code.length != LOBBY_CODE_LENGTH) {
       throw new Error("invalid lobby code");
     }
@@ -37,15 +38,26 @@ export class Lobby {
 
       this.uuid = uuid;
     }
-    if (users == null) {
-      this.users = [];
+    if (players == null) {
+      this.players = [];
     } else {
-      if (!(users instanceof Array)) {
-        throw new Error("users is not an array");
+      if (!(players instanceof Array)) {
+        throw new Error("players is not an array");
       }
 
-      this.users = users;
+      this.players = players;
     }
+    if (spectators == null) {
+      this.spectators = [];
+    } else {
+      if (!(spectators instanceof Array)) {
+        throw new Error("spectators is not an array");
+      }
+
+      this.spectators = spectators;
+    }
+
+    this.started = started;
   }
 
   toString() {
@@ -59,9 +71,16 @@ export class Lobby {
       "hostUuid: " +
       this.hostUuid +
       ", " +
-      "users: [" +
-      this.users +
-      "]"
+      "players: [" +
+      this.players +
+      "]" +
+      ", " +
+      "spectators: [" +
+      this.spectators +
+      "]" +
+      ", " +
+      "started: " + 
+      this.started
     );
   }
 
@@ -69,7 +88,9 @@ export class Lobby {
     return {
       code: this.code,
       host: this.hostUuid,
-      users: this.users,
+      players: this.players,
+      spectators: this.spectators,
+      started: this.started,
     };
   }
 
@@ -91,7 +112,10 @@ export class Lobby {
 
   static fromFirestore(snapshot, options) {
     const data = snapshot.data(options);
-    return new Lobby(data.code, data.host, snapshot.id, data.user);
+    if (data) {
+      return new Lobby(data.code, data.host, snapshot.id, data.players, data.spectators, data.started);
+    }
+    return null;
   }
 }
 
@@ -124,29 +148,6 @@ export async function getLobbyByCode(code) {
     } else {
       return Lobby.fromFirestore(querySnapShot.docs[0]);
     }
-  } catch (e) {
-    throw e;
-  }
-}
-
-export async function addUser(lobby, user) {
-  if (!(lobby instanceof Lobby)) {
-    throw new Error("lobby is not an instance of Lobby class");
-  }
-
-  if (!(user instanceof User)) {
-    throw new Error("user is not an instance of User class");
-  }
-
-  if (lobby.uuid == null) {
-    throw new Error("missing lobby uuid");
-  }
-
-  const docRef = doc(db, "lobby", lobby.uuid);
-  try {
-    await updateDoc(docRef, {
-      users: arrayUnion(user.uuid),
-    });
   } catch (e) {
     throw e;
   }
@@ -205,4 +206,118 @@ export async function deleteLobby(lobby) {
   } catch (e) {
     throw e;
   }
+}
+
+export async function joinPlayers(lobby, uuid, username) {
+  const lobbyRef = doc(db, "lobby", lobby.uuid);
+  const lobbyDoc = await getDoc(lobbyRef);
+  const players = lobbyDoc.data()?.players;
+  const spectators = lobbyDoc.data()?.spectators;
+
+  // If they are already in the players array, do nothing
+  if (players.find(p => p.uuid == uuid)) {
+    return;
+  }
+  else {
+    // Remove from spectators if they are in there
+    let removeSpectator = spectators.find(s => s.uuid == uuid);
+    if (removeSpectator) {
+      try {
+        await updateDoc(lobbyRef, {
+          spectators: arrayRemove(removeSpectator)
+        });
+      } catch (e) {
+        throw e;
+      }
+    }
+
+    // Add them to the players list
+    try {
+      await updateDoc(lobbyRef, {
+        players: arrayUnion({uuid: uuid, username: username})
+      }) 
+    } catch (e) {
+      throw e;
+    }
+  }
+}
+
+export async function joinSpectators(lobby, uuid, username) {
+  const lobbyRef = doc(db, "lobby", lobby.uuid);
+  const lobbyDoc = await getDoc(lobbyRef);
+  const players = lobbyDoc.data()?.players;
+  const spectators = lobbyDoc.data()?.spectators;
+
+  // If they are already in the spectators array, do nothing
+  if (spectators.find(s => s.uuid == uuid)) {
+    return;
+  }
+  else {
+    // Remove from players if they are in there
+    let removePlayer = players.find(s => s.uuid == uuid);
+    if (removePlayer) {
+      try {
+        await updateDoc(lobbyRef, {
+          players: arrayRemove(removePlayer)
+        });
+      } catch (e) {
+        throw e;
+      }
+    }
+
+    // Add them to the spectators list
+    try {
+      await updateDoc(lobbyRef, {
+        spectators: arrayUnion({uuid: uuid, username: username})
+      }) 
+    } catch (e) {
+      throw e;
+    }
+  }
+}
+
+export async function leaveLobby(lobby, uuid) {
+  if (lobby == null) {
+    return;
+  }
+
+  const lobbyRef = doc(db, "lobby", lobby.uuid);
+  const lobbyDoc = await getDoc(lobbyRef);
+  const players = lobbyDoc.data()?.players;
+  const spectators = lobbyDoc.data()?.spectators;
+
+  // Remove from players if they are in there
+  let removePlayer = players.find(s => s.uuid == uuid);
+  if (removePlayer) {
+    try {
+      await updateDoc(lobbyRef, {
+        players: arrayRemove(removePlayer)
+      });
+    } catch (e) {
+      throw e;
+    }
+  }
+
+  // Remove from spectators if they are in there
+  let removeSpectator = spectators.find(s => s.uuid == uuid);
+  if (removeSpectator) {
+    try {
+      await updateDoc(lobbyRef, {
+        spectators: arrayRemove(removeSpectator)
+      });
+    } catch (e) {
+      throw e;
+    }
+  }
+}
+
+export async function startGameForLobby(lobby) {
+  const lobbyRef = doc(db, "lobby", lobby.uuid);
+  try {
+    await updateDoc(lobbyRef, {
+      started: true
+      });
+    } catch (e) {
+      throw e;
+    }
 }
