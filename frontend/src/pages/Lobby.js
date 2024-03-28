@@ -18,10 +18,6 @@ import { Grid, Button, Paper, Typography, Modal } from '@mui/material';
 export default function Lobby() {
     const {userDb, lobby, setLobby} = useContext(Context);
 
-    useEffect(() => {
-        console.log(lobby)
-    }, [lobby])
-
     const {state} = useLocation();
     const navigate = useNavigate();
 

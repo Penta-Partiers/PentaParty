@@ -1,14 +1,24 @@
 // React
-import { useState } from 'react';
+import { useState, useContext } from 'react';
 
 // Routing
 import { useNavigate } from "react-router-dom";
 
 // Material UI
-import { Grid, Button, Typography, TextField } from '@mui/material';
+import { Grid, Button, Typography, TextField, Alert } from '@mui/material';
+
+// User Context
+import { Context } from "../auth/AuthContext";
+
+// Database
+import { getLobbyByCode, joinSpectators } from '../database/models/lobby';
 
 export default function JoinLobby() {
+    const {userDb, setLobby} = useContext(Context);
+
     const [lobbyCode, setLobbyCode] = useState("");
+    const [displayError, setDisplayError] = useState(false);
+
     const navigate = useNavigate();
 
     const backClick = () => {
@@ -19,10 +29,20 @@ export default function JoinLobby() {
         setLobbyCode(event.target.value);
     }
 
-    function handleJoinLobbyClick(e) {
-        // TODO: Verify lobby code with backend, display error message if invalid
+    async function handleJoinLobbyClick(e) {
         if (lobbyCode != "") {
-            navigate("/lobby/" + lobbyCode, { state: { isHost: false } });
+            await getLobbyByCode(lobbyCode.toUpperCase())
+                .then(async (lobby) => {
+                    if (lobby) {
+                        setLobby(lobby);
+                        await joinSpectators(lobby, userDb.uuid, userDb.username);
+                        navigate("/lobby/" + lobbyCode.toUpperCase(), { state: { isHost: false } });
+                    }
+                    else {
+                        setDisplayError(true);
+                    }
+                })
+                .catch((error) => console.log(error));
         }
     }
 
@@ -35,6 +55,13 @@ export default function JoinLobby() {
         >
             <Grid item xs={5}>
                 <div className="h-full flex flex-col items-center justify-center space-y-8">
+                    {displayError && 
+                        <Alert
+                            severity="error"
+                            onClose={() => setDisplayError(false)}>
+                            Invalid lobby code!
+                        </Alert>
+                    }
                     <Typography variant="h4">Enter lobby code:</Typography>
                     <TextField 
                         onChange={handleTextFieldChange}
