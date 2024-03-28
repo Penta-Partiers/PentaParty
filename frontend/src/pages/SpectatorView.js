@@ -11,25 +11,7 @@ import Widget from "../components/Widget";
 // Custom hooks / game logic
 import { useWidget } from "../tetris/useWidget";
 
-// Websockets
-import useWebSocket from 'react-use-websocket';
-
-// Environment variables
-import { getEnvOrExit } from '../config.js';
-
 export default function SpectatorView() {
-    const wsPort = getEnvOrExit("REACT_APP_WS_PORT");
-
-    // TODO: set up websocket connection
-    const { sendJsonMessage, readyState } = useWebSocket(
-        "ws://localhost:" + wsPort,
-        {
-            onOpen: () => {
-                console.log("WebSocket connection established!");
-            },
-        }
-    )
-
     // TODO: Temporary, will get board state from websocket server later
     const [board, setBoard] = useState(() => {
         var board = new Array(25);
