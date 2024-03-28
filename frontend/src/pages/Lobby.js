@@ -1,5 +1,13 @@
 // React
-import { useState } from 'react';
+import { useState, useContext, useEffect } from 'react';
+
+// Database
+import { doc, onSnapshot } from "firebase/firestore";
+import { Lobby as LobbyDb, deleteLobby, joinPlayers, joinSpectators } from '../database/models/lobby';
+import { db } from "../firebase.js";
+
+// User Context
+import { Context } from "../auth/AuthContext";
 
 // Routing
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -8,30 +16,17 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Grid, Button, Paper, Typography, Modal } from '@mui/material';
 
 export default function Lobby() {
+    const {userDb, lobby, setLobby} = useContext(Context);
+
+    useEffect(() => {
+        console.log(lobby)
+    }, [lobby])
+
     const {state} = useLocation();
     const navigate = useNavigate();
 
     const [isHost, setIsHost] = useState(state.isHost)
-    const [roomCode, setRoomCode] = useState("ABC123");
     const [modalOpen, setModalOpen] = useState(false);
-
-    const playersList = [
-        "player_01",
-        "player_02",
-        "player_03",
-        "player_04",
-    ];
-
-    const spectatorsList = [
-        "spectator_01",
-        "spectator_02",
-        "spectator_03",
-        "spectator_04",
-        "spectator_05",
-        "spectator_06",
-        "spectator_07",
-        "spectator_08",
-    ];
 
     const friendsList = [
         "friend_01",
@@ -43,6 +38,43 @@ export default function Lobby() {
         "friend_07",
     ]
 
+    // Listen to real-time updates from the lobby
+    useEffect(() => {
+        const unsubscribe = onSnapshot(doc(db, "lobby", lobby.uuid), (doc) => {
+            // console.log(LobbyDb.fromFirestore(doc));
+            setLobby(LobbyDb.fromFirestore(doc));
+        });
+        return () => unsubscribe();
+    }, []);
+
+    async function handleJoinPlayersClick() {
+        if (lobby.players.length >= 4) {
+            return;
+        }
+        else {
+            await joinPlayers(lobby, userDb.uuid, userDb.username);
+        }
+    }
+
+    async function handleJoinSpectatorsClick() {
+        await joinSpectators(lobby, userDb.uuid, userDb.username);
+    }
+
+    async function handleLeaveClick() {
+        if (isHost) {
+            await deleteLobby(lobby)
+            .then(() => {
+                setLobby(null);
+                navigate("/home");
+            })
+            .catch((e) => console.log(e));
+        }
+        else {
+            // TODO: remove player from lobby
+            navigate("/home");
+        }
+    }
+
     return (
         <Grid
             container
@@ -52,7 +84,7 @@ export default function Lobby() {
         >
             <Grid item xs={7}>
                 <div className='flex flex-col items-center w-full p-2 space-y-8'>
-                    <Typography variant='h4'><b>Room Code:</b> {roomCode}</Typography>
+                    <Typography variant='h4'><b>Room Code:</b> {lobby ? lobby.code : <></>}</Typography>
 
                     <Modal
                         open={modalOpen}
@@ -63,7 +95,7 @@ export default function Lobby() {
                             <Typography variant="h4"><b>Invite</b></Typography>
                             <div className='flex flex-col items-center bg-slate-300 h-80 w-full p-2 overflow-auto space-y-2 border border-slate-300'>
                                 {friendsList.map((name, index) => (
-                                    <Paper elevation="2" key={index} sx={{ minHeight: "50px", width: "100%" }}>
+                                    <Paper elevation={2} key={index} sx={{ minHeight: "50px", width: "100%" }}>
                                         <div className="flex items-center justify-between h-[50px] px-3">
                                             <Typography variant="subtitle1" sx={{ overflow: 'auto', maxWidth: '200px' }}>{name}</Typography>
                                             <Button variant="outlined" size='small'>Invite</Button>
@@ -79,28 +111,28 @@ export default function Lobby() {
                         <div className='flex flex-col items-center w-1/2 space-y-2 p-2'>
                             <Typography variant="h5"><b>Players</b></Typography>
                             <div className='flex flex-col items-center h-80 w-full bg-slate-300 overflow-auto p-2 space-y-2 border border-slate-300'>
-                                {playersList.map((name, index) => (
+                                {lobby && lobby.players.map((player, index) => (
                                     <Paper elevation="2" key={index} sx={{ minHeight: "50px", width: "100%" }}>
                                         <div className='flex items-center justify-center h-full'>
-                                            <Typography variant="h6">{name}</Typography>
+                                            <Typography variant="h6">{player.username}</Typography>
                                         </div>
                                     </Paper>
                                 ))}
                             </div>
-                            <Button variant="contained">Join Players</Button>
+                            <Button variant="contained" onClick={handleJoinPlayersClick}>Join Players</Button>
                         </div>
                         <div className='flex flex-col items-center w-1/2 space-y-2 p-2'>
                             <Typography variant="h5"><b>Spectators</b></Typography>
                             <div className='flex flex-col items-center h-80 w-full bg-slate-300 overflow-auto p-2 space-y-2 border border-slate-300'>
-                                {spectatorsList.map((name, index) => (
+                                {lobby && lobby.spectators.map((spectator, index) => (
                                     <Paper elevation="2" key={index} sx={{ minHeight: "50px", width: "100%" }}>
                                         <div className='flex items-center justify-center h-full'>
-                                            <Typography variant="h6">{name}</Typography>
+                                            <Typography variant="h6">{spectator.username}</Typography>
                                         </div>
                                     </Paper>
                                 ))}
                             </div>
-                            <Button variant="contained">Join Spectators</Button>
+                            <Button variant="contained" onClick={handleJoinSpectatorsClick}>Join Spectators</Button>
                         </div>
                     </div>
 
@@ -112,7 +144,7 @@ export default function Lobby() {
                             {isHost && <Button variant="contained" size="large" fullWidth="true">Start</Button>}
                         </div>
                         <div className="w-[100px]">
-                            <Button variant="outlined" fullWidth="true" onClick={() => navigate("/home")}>Leave</Button>
+                            <Button variant="outlined" fullWidth="true" onClick={handleLeaveClick}>Leave</Button>
                         </div>
                     </div>
                 </div>
