@@ -25,8 +25,6 @@ import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline';
 export default function Home() {
     const {userDb, setLobby} = useContext(Context);
 
-    console.log(userDb);
-
     const navigate = useNavigate();
 
     const handleSignOut = () => {
@@ -44,7 +42,7 @@ export default function Home() {
                 console.log("clicked create lobby button")
                 // TODO: figure out how to send invites to friends
                 var lobbyCode = generateLobbyCode();
-                let lobby = new Lobby(lobbyCode, userDb.uuid, null, null, [{uid: userDb.uuid, username: userDb.username}]);
+                let lobby = new Lobby(lobbyCode, userDb.uuid, null, null, [{uuid: userDb.uuid, username: userDb.username}], false);
                 await createLobby(lobby)
                     .then(() => {
                         setLobby(lobby);

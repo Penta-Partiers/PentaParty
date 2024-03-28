@@ -18,7 +18,7 @@ import { User } from "./user.js";
 const LOBBY_CODE_LENGTH = 6;
 
 export class Lobby {
-  constructor(code, hostUuid, uuid, players, spectators) {
+  constructor(code, hostUuid, uuid, players, spectators, started) {
     if (typeof code !== "string" && code.length != LOBBY_CODE_LENGTH) {
       throw new Error("invalid lobby code");
     }
@@ -56,6 +56,8 @@ export class Lobby {
 
       this.spectators = spectators;
     }
+
+    this.started = started;
   }
 
   toString() {
@@ -75,7 +77,10 @@ export class Lobby {
       ", " +
       "spectators: [" +
       this.spectators +
-      "]"
+      "]" +
+      ", " +
+      "started: " + 
+      this.started
     );
   }
 
@@ -85,6 +90,7 @@ export class Lobby {
       host: this.hostUuid,
       players: this.players,
       spectators: this.spectators,
+      started: this.started,
     };
   }
 
@@ -107,7 +113,7 @@ export class Lobby {
   static fromFirestore(snapshot, options) {
     const data = snapshot.data(options);
     if (data) {
-      return new Lobby(data.code, data.host, snapshot.id, data.players, data.spectators);
+      return new Lobby(data.code, data.host, snapshot.id, data.players, data.spectators, data.started);
     }
     return null;
   }
@@ -209,12 +215,12 @@ export async function joinPlayers(lobby, uuid, username) {
   const spectators = lobbyDoc.data()?.spectators;
 
   // If they are already in the players array, do nothing
-  if (players.find(p => p.uid == uuid)) {
+  if (players.find(p => p.uuid == uuid)) {
     return;
   }
   else {
     // Remove from spectators if they are in there
-    let removeSpectator = spectators.find(s => s.uid == uuid);
+    let removeSpectator = spectators.find(s => s.uuid == uuid);
     if (removeSpectator) {
       try {
         await updateDoc(lobbyRef, {
@@ -228,7 +234,7 @@ export async function joinPlayers(lobby, uuid, username) {
     // Add them to the players list
     try {
       await updateDoc(lobbyRef, {
-        players: arrayUnion({uid: uuid, username: username})
+        players: arrayUnion({uuid: uuid, username: username})
       }) 
     } catch (e) {
       throw e;
@@ -243,12 +249,12 @@ export async function joinSpectators(lobby, uuid, username) {
   const spectators = lobbyDoc.data()?.spectators;
 
   // If they are already in the spectators array, do nothing
-  if (spectators.find(s => s.uid == uuid)) {
+  if (spectators.find(s => s.uuid == uuid)) {
     return;
   }
   else {
     // Remove from players if they are in there
-    let removePlayer = players.find(s => s.uid == uuid);
+    let removePlayer = players.find(s => s.uuid == uuid);
     if (removePlayer) {
       try {
         await updateDoc(lobbyRef, {
@@ -262,7 +268,7 @@ export async function joinSpectators(lobby, uuid, username) {
     // Add them to the spectators list
     try {
       await updateDoc(lobbyRef, {
-        spectators: arrayUnion({uid: uuid, username: username})
+        spectators: arrayUnion({uuid: uuid, username: username})
       }) 
     } catch (e) {
       throw e;
@@ -271,13 +277,17 @@ export async function joinSpectators(lobby, uuid, username) {
 }
 
 export async function leaveLobby(lobby, uuid) {
+  if (lobby == null) {
+    return;
+  }
+
   const lobbyRef = doc(db, "lobby", lobby.uuid);
   const lobbyDoc = await getDoc(lobbyRef);
   const players = lobbyDoc.data()?.players;
   const spectators = lobbyDoc.data()?.spectators;
 
   // Remove from players if they are in there
-  let removePlayer = players.find(s => s.uid == uuid);
+  let removePlayer = players.find(s => s.uuid == uuid);
   if (removePlayer) {
     try {
       await updateDoc(lobbyRef, {
@@ -289,7 +299,7 @@ export async function leaveLobby(lobby, uuid) {
   }
 
   // Remove from spectators if they are in there
-  let removeSpectator = spectators.find(s => s.uid == uuid);
+  let removeSpectator = spectators.find(s => s.uuid == uuid);
   if (removeSpectator) {
     try {
       await updateDoc(lobbyRef, {
@@ -299,4 +309,15 @@ export async function leaveLobby(lobby, uuid) {
       throw e;
     }
   }
+}
+
+export async function startGameForLobby(lobby) {
+  const lobbyRef = doc(db, "lobby", lobby.uuid);
+  try {
+    await updateDoc(lobbyRef, {
+      started: true
+      });
+    } catch (e) {
+      throw e;
+    }
 }

@@ -3,7 +3,7 @@ import { useState, useContext, useEffect } from 'react';
 
 // Database
 import { doc, onSnapshot } from "firebase/firestore";
-import { Lobby as LobbyDb, deleteLobby, joinPlayers, joinSpectators, leaveLobby } from '../database/models/lobby';
+import { Lobby as LobbyDb, deleteLobby, joinPlayers, joinSpectators, leaveLobby, startGameForLobby } from '../database/models/lobby';
 import { db } from "../firebase.js";
 
 // User Context
@@ -13,7 +13,7 @@ import { Context } from "../auth/AuthContext";
 import { useLocation, useNavigate } from 'react-router-dom';
 
 // Material UI
-import { Grid, Button, Paper, Typography, Modal } from '@mui/material';
+import { Grid, Button, Paper, Typography, Modal, Alert } from '@mui/material';
 
 export default function Lobby() {
     const {userDb, lobby, setLobby} = useContext(Context);
@@ -23,6 +23,7 @@ export default function Lobby() {
 
     const [isHost, setIsHost] = useState(state.isHost)
     const [modalOpen, setModalOpen] = useState(false);
+    const [displayError, setDisplayError] = useState(false);
 
     const friendsList = [
         "friend_01",
@@ -35,10 +36,22 @@ export default function Lobby() {
     ]
 
     // Listen to real-time updates from the lobby
+    // Reference: https://stackoverflow.com/questions/59944658/which-react-hook-to-use-with-firestore-onsnapshot
     useEffect(() => {
         const unsubscribe = onSnapshot(doc(db, "lobby", lobby.uuid), (doc) => {
-            // console.log(LobbyDb.fromFirestore(doc));
-            setLobby(LobbyDb.fromFirestore(doc));
+            let lobbyUpdate = LobbyDb.fromFirestore(doc);
+            setLobby(lobbyUpdate);
+
+            // Once game has started, redirect players and spectators accordingly
+            if (lobbyUpdate && lobbyUpdate.started) {
+                console.log("game started!");
+                if (lobbyUpdate.players.find(p => p.uuid == userDb.uuid)) {
+                    navigate("/player");
+                }
+                else {
+                    navigate("/spectator");
+                }
+            }
         });
         return () => unsubscribe();
     }, []);
@@ -75,6 +88,15 @@ export default function Lobby() {
         }
     }
 
+    async function handleStartGameClick() {
+        if (lobby.players.length > 0 && lobby.players.length <= 4 && lobby.spectators.length >= 1) {
+            await startGameForLobby(lobby);
+        }
+        else {
+            setDisplayError(true);
+        }
+    }
+
     return (
         <Grid
             container
@@ -84,6 +106,12 @@ export default function Lobby() {
         >
             <Grid item xs={7}>
                 <div className='flex flex-col items-center w-full p-2 space-y-8'>
+                    {displayError &&
+                        <Alert severity="error" onClose={() => setDisplayError(false)}>
+                            Invalid lobby arrangement!
+                        </Alert>
+                    }
+
                     <Typography variant='h4'><b>Room Code:</b> {lobby ? lobby.code : <></>}</Typography>
 
                     <Modal
@@ -141,7 +169,9 @@ export default function Lobby() {
                             <Button variant="outlined" fullWidth="true" onClick={() => setModalOpen(true)}>Invite</Button>
                         </div>
                         <div className="w-[100px]">
-                            {isHost && <Button variant="contained" size="large" fullWidth="true">Start</Button>}
+                            {isHost && 
+                                <Button variant="contained" size="large" fullWidth="true" onClick={handleStartGameClick}>Start</Button>
+                            }
                         </div>
                         <div className="w-[100px]">
                             <Button variant="outlined" fullWidth="true" onClick={handleLeaveClick}>Leave</Button>
