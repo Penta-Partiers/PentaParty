@@ -269,3 +269,34 @@ export async function joinSpectators(lobby, uuid, username) {
     }
   }
 }
+
+export async function leaveLobby(lobby, uuid) {
+  const lobbyRef = doc(db, "lobby", lobby.uuid);
+  const lobbyDoc = await getDoc(lobbyRef);
+  const players = lobbyDoc.data()?.players;
+  const spectators = lobbyDoc.data()?.spectators;
+
+  // Remove from players if they are in there
+  let removePlayer = players.find(s => s.uid == uuid);
+  if (removePlayer) {
+    try {
+      await updateDoc(lobbyRef, {
+        players: arrayRemove(removePlayer)
+      });
+    } catch (e) {
+      throw e;
+    }
+  }
+
+  // Remove from spectators if they are in there
+  let removeSpectator = spectators.find(s => s.uid == uuid);
+  if (removeSpectator) {
+    try {
+      await updateDoc(lobbyRef, {
+        spectators: arrayRemove(removeSpectator)
+      });
+    } catch (e) {
+      throw e;
+    }
+  }
+}

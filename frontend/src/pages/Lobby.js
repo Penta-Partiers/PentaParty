@@ -3,7 +3,7 @@ import { useState, useContext, useEffect } from 'react';
 
 // Database
 import { doc, onSnapshot } from "firebase/firestore";
-import { Lobby as LobbyDb, deleteLobby, joinPlayers, joinSpectators } from '../database/models/lobby';
+import { Lobby as LobbyDb, deleteLobby, joinPlayers, joinSpectators, leaveLobby } from '../database/models/lobby';
 import { db } from "../firebase.js";
 
 // User Context
@@ -59,15 +59,19 @@ export default function Lobby() {
     async function handleLeaveClick() {
         if (isHost) {
             await deleteLobby(lobby)
-            .then(() => {
-                setLobby(null);
-                navigate("/home");
-            })
-            .catch((e) => console.log(e));
+                .then(() => {
+                    setLobby(null);
+                    navigate("/home");
+                })
+                .catch((e) => console.log(e));
         }
         else {
-            // TODO: remove player from lobby
-            navigate("/home");
+            await leaveLobby(lobby, userDb.uuid)
+                .then(() => {
+                    setLobby(null);
+                    navigate("/home");
+                })
+                .catch((e) => console.log(e));
         }
     }
 
