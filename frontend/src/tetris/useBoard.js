@@ -226,13 +226,13 @@ export function rotateShape(board, points, direction) {
         // Finalize the rotation by reversing either the rows or the columns
         // Due to the transpose, the maximum index for the row will be the calculated using the range of columns (X coordinate) of the original matrix
         if (direction === -1) {
-            // Reverse rows for clockwise
-            var maxRowIndex = maxX - minX
-            rowNumber = maxRowIndex - rowNumber
+            // Reverse columns for clockwise
+            var maxColumnIndex = maxX - minX
+            rowNumber = maxColumnIndex - rowNumber
         } else {
-            // Reverse columns for counter clockwise
-            var maxColumnIndex = maxY - minY
-            columnNumber = maxColumnIndex - columnNumber
+            // Reverse rows for counter clockwise
+            var maxRowIndex = maxY - minY
+            columnNumber = maxRowIndex - columnNumber
         }
 
         // Add back minimum of each dimension to get actual coordinates
@@ -247,7 +247,7 @@ export function rotateShape(board, points, direction) {
         let columnNumber = rotatedPoints[p][1]
 
         // If the board or a block obstructs the path
-        if (columnNumber < 0 || columnNumber >= NUM_COLS || rowNumber < 0 || rowNumber >= NUM_ROWS || board[rowNumber][columnNumber] === 1) {
+        if (columnNumber < 0 || columnNumber >= board[0].length || rowNumber < 0 || rowNumber >= board.length || board[rowNumber][columnNumber] === 1) {
             return
         }
     }
