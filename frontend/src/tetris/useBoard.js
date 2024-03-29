@@ -103,6 +103,25 @@ export function boardStateReducer(state, action) {
     return newState;
 }
 
+/**
+ * This function adds an incomplete row to the bottom of the tetris board
+ * @param {array[array[number]]} board An array of arrays representing the Tetris board
+ */
+export function addIncompleteRow(board) {
+    // Create 3 - 5 holes in the new line
+    var numHoles = Math.floor(Math.random() * 3) + 3
+    board.splice(0, 1)
+    board.push(new Array(board[0].length).fill(1))
+    var removedItems = new Set()
+    while (removedItems.size < numHoles) {
+      var newGap = Math.floor(Math.random() * board[0].length)
+      if (!removedItems.has(newGap)) {
+        removedItems.add(newGap)
+        board[NUM_ROWS - 1][newGap] = 0
+      }
+    }
+}
+
 export function lowerRows(board, rows) {
     // rows array must be in descending order (from the bottom of the board to the top, with the value decreasing because row 0 is on the top)
     rows.sort()
@@ -226,13 +245,13 @@ export function rotateShape(board, points, direction) {
         // Finalize the rotation by reversing either the rows or the columns
         // Due to the transpose, the maximum index for the row will be the calculated using the range of columns (X coordinate) of the original matrix
         if (direction === -1) {
-            // Reverse rows for clockwise
-            var maxRowIndex = maxX - minX
-            rowNumber = maxRowIndex - rowNumber
+            // Reverse columns for clockwise
+            var maxColumnIndex = maxX - minX
+            rowNumber = maxColumnIndex - rowNumber
         } else {
-            // Reverse columns for counter clockwise
-            var maxColumnIndex = maxY - minY
-            columnNumber = maxColumnIndex - columnNumber
+            // Reverse rows for counter clockwise
+            var maxRowIndex = maxY - minY
+            columnNumber = maxRowIndex - columnNumber
         }
 
         // Add back minimum of each dimension to get actual coordinates
@@ -247,7 +266,7 @@ export function rotateShape(board, points, direction) {
         let columnNumber = rotatedPoints[p][1]
 
         // If the board or a block obstructs the path
-        if (columnNumber < 0 || columnNumber >= NUM_COLS || rowNumber < 0 || rowNumber >= NUM_ROWS || board[rowNumber][columnNumber] === 1) {
+        if (columnNumber < 0 || columnNumber >= board[0].length || rowNumber < 0 || rowNumber >= board.length || board[rowNumber][columnNumber] === 1) {
             return
         }
     }
