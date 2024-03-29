@@ -3,7 +3,7 @@ import { useState, useContext, useEffect } from 'react';
 
 // Database
 import { doc, onSnapshot } from "firebase/firestore";
-import { Lobby as LobbyDb, deleteLobby, joinPlayers, joinSpectators, leaveLobby, startGameForLobby } from '../database/models/lobby';
+import { Lobby as LobbyDb, deleteLobby, inviteFriendToLobby, joinPlayers, joinSpectators, leaveLobby, startGameForLobby } from '../database/models/lobby';
 import { User, getUser } from '../database/models/user.js';
 import { db } from "../firebase.js";
 
@@ -21,16 +21,22 @@ const MAX_PLAYERS = 4;
 function InviteFriendsModal({ isOpen, onClose, friendsRenderList, onInvite }) {
     const [displaySuccessAlert, setDisplaySuccessAlert] = useState(false);
 
-    function handleInviteClick(friendUuid) {
+    async function handleInviteClick(friendUuid) {
         setDisplaySuccessAlert(false);
-        onInvite(friendUuid);
+        await onInvite(friendUuid);
         setDisplaySuccessAlert(true);
+    }
+
+    function handleClose() {
+        console.log("closed modal!")
+        setDisplaySuccessAlert(false);
+        onClose();
     }
 
     return (
         <Modal
             open={isOpen}
-            onClose={onClose}
+            onClose={handleClose}
             sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}
         >
             <div className='flex flex-col items-center bg-white w-2/5 h-fit p-6 space-y-4'>
@@ -39,7 +45,7 @@ function InviteFriendsModal({ isOpen, onClose, friendsRenderList, onInvite }) {
                         Lobby invite sent!
                     </Alert>
                 }
-                <Typography variant="h4"><b>Invite</b></Typography>
+                <Typography variant="h4"><b>Invite Friends</b></Typography>
                 <div className='flex flex-col items-center bg-slate-300 h-80 w-full p-2 overflow-auto space-y-2 border border-slate-300'>
                     {friendsRenderList 
                         ?
@@ -57,7 +63,7 @@ function InviteFriendsModal({ isOpen, onClose, friendsRenderList, onInvite }) {
                         </div>
                     }
                 </div>
-                <Button variant="contained" onClick={onClose}>Done</Button>
+                <Button variant="contained" onClick={handleClose}>Done</Button>
             </div>
         </Modal>
     )
@@ -114,8 +120,10 @@ export default function Lobby() {
         return () => unsubscribe();
     }, []);
 
-    const handleInviteClick = (friendUuid) => {
-        console.log("invite sent to " + friendUuid);
+    const handleInviteClick = async (friendUuid) => {
+        // TODO: connect with db and send invite to user
+        await inviteFriendToLobby(friendUuid, lobby.code)
+            .catch((error) => console.log(error));
     }
 
     async function handleJoinPlayersClick() {
