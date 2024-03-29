@@ -59,6 +59,9 @@ export default function JoinLobby() {
                         if (currentNumberOfPlayers >= LOBBY_LIMIT) {
                             setDisplayError(true);
                             setErrorMessage("Lobby is full!");
+                            if (tabIndex == 1) {
+                                await removeLobbyInvite(userDb, lobbyCode);
+                            }
                         }
                         setLobby(lobby);
                         await removeLobbyInvite(userDb, lobbyCode);
@@ -67,7 +70,13 @@ export default function JoinLobby() {
                     }
                     else {
                         setDisplayError(true);
-                        setErrorMessage("Invalid lobby code!");
+                        if (tabIndex == 0) {
+                            setErrorMessage("Invalid lobby code!");
+                        }
+                        else {
+                            setErrorMessage("Lobby no longer exists!");
+                            await removeLobbyInvite(userDb, lobbyCode);
+                        }
                     }
                 })
                 .catch((error) => console.log(error));
@@ -93,6 +102,7 @@ export default function JoinLobby() {
     // Handles on-click to change tabs
     const handleChange = (event, newTabIndex) => {
         setTabIndex(newTabIndex);
+        setDisplayError(false);
     };
 
     // Renders the corresponding content depending on which tab is currently selected
@@ -127,18 +137,27 @@ export default function JoinLobby() {
             case 1:
                 if (lobbyInvitesList) {
                     content = (
-                        <div className="flex flex-col space-y-2">
-                            {lobbyInvitesList.map((lobbyCode, index) => (
-                                <Paper elevation={2} key={index} sx={{ height: "fit-content" }}>
-                                    <div className="flex items-center justify-between h-fit p-4">
-                                        <Typography variant="h5">Room Code: <b>{lobbyCode}</b></Typography>
-                                        <div className='flex space-x-2'>
-                                            <Button variant="contained" onClick={() => handleAcceptLobbyInviteClick(lobbyCode)}>Join</Button>
-                                            <Button variant="outlined" onClick={() => handleDeclineLobbyInviteClick(lobbyCode)}>Decline</Button>
+                        <div className="flex flex-col">
+                            {displayError && 
+                                <Alert
+                                    severity="error"
+                                    onClose={() => setDisplayError(false)}>
+                                    {errorMessage}
+                                </Alert>
+                            }
+                            <div className="flex flex-col space-y-2">
+                                {lobbyInvitesList.map((lobbyCode, index) => (
+                                    <Paper elevation={2} key={index} sx={{ height: "fit-content" }}>
+                                        <div className="flex items-center justify-between h-fit p-4">
+                                            <Typography variant="h5">Room Code: <b>{lobbyCode}</b></Typography>
+                                            <div className='flex space-x-2'>
+                                                <Button variant="contained" onClick={() => handleAcceptLobbyInviteClick(lobbyCode)}>Join</Button>
+                                                <Button variant="outlined" onClick={() => handleDeclineLobbyInviteClick(lobbyCode)}>Decline</Button>
+                                            </div>
                                         </div>
-                                    </div>
-                                </Paper>
-                            ))}
+                                    </Paper>
+                                ))}
+                            </div>
                         </div>
                     )
                 }
@@ -176,24 +195,6 @@ export default function JoinLobby() {
             sx={{ minHeight: '100vh' }}
         >
             <Grid item xs={5}>
-                {/* <div className="h-full flex flex-col items-center justify-center space-y-8">
-                    {displayError && 
-                        <Alert
-                            severity="error"
-                            onClose={() => setDisplayError(false)}>
-                            {errorMessage}
-                        </Alert>
-                    }
-                    <Typography variant="h4">Enter lobby code:</Typography>
-                    <TextField 
-                        onChange={handleTextFieldChange}
-                        className="w-[60%]"
-                        sx={{ input: {textAlign: "center", fontSize: 40} }} />
-                    <div className="flex justify-center space-x-12">
-                        <Button variant="outlined" onClick={backClick}>Back</Button>
-                        <Button variant="contained" onClick={handleJoinLobbyClick}>Join Lobby</Button>
-                    </div>
-                </div> */}
                 <div className="flex flex-col items-center w-full space-y-6">
                     <div className="flex justify-center w-full">
                         <Tabs value={tabIndex} onChange={handleChange} variant='fullWidth' centered className="w-full border">
