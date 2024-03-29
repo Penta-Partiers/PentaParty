@@ -214,47 +214,47 @@ test("Rotate Shape Into Another Shape Unit Test", () => {
     }
 })
 
-// test("Rotate Shape Counter Clockwise Unit Test", () => {
-//     var board = useBoard.initializeEmptyBoard()
-//     var points = [[useBoard.NUM_ROWS - 1, 3], [useBoard.NUM_ROWS - 2, 3], [useBoard.NUM_ROWS - 3, 3], [useBoard.NUM_ROWS - 2, 4]]
-//     var endPosition = [[useBoard.NUM_ROWS - 2, 3], [useBoard.NUM_ROWS - 2, 4], [useBoard.NUM_ROWS - 2, 5], [useBoard.NUM_ROWS - 3, 4]]
-//     for (let p = 0; p < points.length; p++) {
-//         let rowNumber = points[p][0]
-//         let columnNumber = points[p][1]
-//         board[rowNumber][columnNumber] = 2
-//     }
+test("Rotate Shape Counter Clockwise Unit Test", () => {
+    var board = useBoard.initializeEmptyBoard()
+    var points = [[useBoard.NUM_ROWS - 1, 3], [useBoard.NUM_ROWS - 2, 3], [useBoard.NUM_ROWS - 3, 3], [useBoard.NUM_ROWS - 2, 4]]
+    var endPosition = [[useBoard.NUM_ROWS - 2, 3], [useBoard.NUM_ROWS - 2, 4], [useBoard.NUM_ROWS - 2, 5], [useBoard.NUM_ROWS - 3, 4]]
+    for (let p = 0; p < points.length; p++) {
+        let rowNumber = points[p][0]
+        let columnNumber = points[p][1]
+        board[rowNumber][columnNumber] = 2
+    }
 
-//     useBoard.rotateShape(board, points, -1)
+    useBoard.rotateShape(board, points, -1)
 
-//     for (let p = 0; p < points.length; p++) {
-//         let rowNumber = points[p][0]
-//         let columnNumber = points[p][1]
-//         expect(board[rowNumber][columnNumber]).toBe(2)
-//     }
+    for (let p = 0; p < points.length; p++) {
+        let rowNumber = points[p][0]
+        let columnNumber = points[p][1]
+        expect(board[rowNumber][columnNumber]).toBe(2)
+    }
 
-//     expect(points.sort()).toEqual(endPosition.sort())
-// })
+    expect(points.sort()).toEqual(endPosition.sort())
+})
 
-// test("Rotate Shape Clockwise Unit Test", () => {
-//     var board = useBoard.initializeEmptyBoard()
-//     var points = [[useBoard.NUM_ROWS - 1, 3], [useBoard.NUM_ROWS - 2, 3], [useBoard.NUM_ROWS - 3, 3], [useBoard.NUM_ROWS - 2, 4]]
-//     var endPosition = [[useBoard.NUM_ROWS - 3, 3], [useBoard.NUM_ROWS - 3, 4], [useBoard.NUM_ROWS - 3, 5], [useBoard.NUM_ROWS - 2, 4]]
-//     for (let p = 0; p < points.length; p++) {
-//         let rowNumber = points[p][0]
-//         let columnNumber = points[p][1]
-//         board[rowNumber][columnNumber] = 2
-//     }
+test("Rotate Shape Clockwise Unit Test", () => {
+    var board = useBoard.initializeEmptyBoard()
+    var points = [[useBoard.NUM_ROWS - 1, 3], [useBoard.NUM_ROWS - 2, 3], [useBoard.NUM_ROWS - 3, 3], [useBoard.NUM_ROWS - 2, 4]]
+    var endPosition = [[useBoard.NUM_ROWS - 3, 3], [useBoard.NUM_ROWS - 3, 4], [useBoard.NUM_ROWS - 3, 5], [useBoard.NUM_ROWS - 2, 4]]
+    for (let p = 0; p < points.length; p++) {
+        let rowNumber = points[p][0]
+        let columnNumber = points[p][1]
+        board[rowNumber][columnNumber] = 2
+    }
 
-//     useBoard.rotateShape(board, points, 1)
+    useBoard.rotateShape(board, points, 1)
 
-//     for (let p = 0; p < points.length; p++) {
-//         let rowNumber = points[p][0]
-//         let columnNumber = points[p][1]
-//         expect(board[rowNumber][columnNumber]).toBe(2)
-//     }
+    for (let p = 0; p < points.length; p++) {
+        let rowNumber = points[p][0]
+        let columnNumber = points[p][1]
+        expect(board[rowNumber][columnNumber]).toBe(2)
+    }
 
-//     expect(points.sort()).toEqual(endPosition.sort())
-// })
+    expect(points.sort()).toEqual(endPosition.sort())
+})
 
 test("Lower Shape Without Freeze Unit Test", () => {
     var board = useBoard.initializeEmptyBoard()
