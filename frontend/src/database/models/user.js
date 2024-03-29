@@ -15,7 +15,7 @@ import { db } from "../../firebase.js";
 import { validateEmail } from "../../util/util.js";
 
 export class User {
-  constructor(uuid, email, username, friends, pendingFriends, highScore) {
+  constructor(uuid, email, username, friends, pendingFriends, highScore, lobbyInvites) {
     if (!validateEmail(email)) {
       throw new Error("invalid email address");
     }
@@ -59,6 +59,15 @@ export class User {
 
       this.highScore = highScore;
     }
+
+    if (lobbyInvites == null) {
+      this.lobbyInvites = [];
+    } else {
+      if (!(lobbyInvites instanceof Array)) {
+        throw new Error("pendingFriends is not an array");
+      }
+      this.lobbyInvites = lobbyInvites;
+    }
   }
 
   toString() {
@@ -77,6 +86,9 @@ export class User {
       "], " +
       "pending friends: [" +
       this.pendingFriends +
+      "]" +
+      "lobby invites: [" +
+      this.lobbyInvites +
       "]"
     );
   }
@@ -88,6 +100,7 @@ export class User {
       friends: this.friends,
       pending_friends: this.pendingFriends,
       high_score: this.highScore,
+      lobby_invites: this.lobbyInvites,
     };
   }
 
@@ -115,7 +128,8 @@ export class User {
       data.username,
       data.friends,
       data.pending_friends,
-      data.high_score
+      data.high_score,
+      data.lobby_invites,
     );
   }
 }
