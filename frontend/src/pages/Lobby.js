@@ -4,6 +4,7 @@ import { useState, useContext, useEffect } from 'react';
 // Database
 import { doc, onSnapshot } from "firebase/firestore";
 import { Lobby as LobbyDb, deleteLobby, joinPlayers, joinSpectators, leaveLobby, startGameForLobby } from '../database/models/lobby';
+import { User, getUser } from '../database/models/user.js';
 import { db } from "../firebase.js";
 
 // User Context
@@ -13,9 +14,54 @@ import { Context } from "../auth/AuthContext";
 import { useLocation, useNavigate } from 'react-router-dom';
 
 // Material UI
-import { Grid, Button, Paper, Typography, Modal, Alert } from '@mui/material';
+import { Grid, Button, Paper, Typography, Modal, Alert, CircularProgress } from '@mui/material';
 
 const MAX_PLAYERS = 4;
+
+function InviteFriendsModal({ isOpen, onClose, friendsRenderList, onInvite }) {
+    const [displaySuccessAlert, setDisplaySuccessAlert] = useState(false);
+
+    function handleInviteClick(friendUuid) {
+        setDisplaySuccessAlert(false);
+        onInvite(friendUuid);
+        setDisplaySuccessAlert(true);
+    }
+
+    return (
+        <Modal
+            open={isOpen}
+            onClose={onClose}
+            sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}
+        >
+            <div className='flex flex-col items-center bg-white w-2/5 h-fit p-6 space-y-4'>
+                {displaySuccessAlert &&
+                    <Alert severity="success" onClose={() => setDisplaySuccessAlert(false)}>
+                        Lobby invite sent!
+                    </Alert>
+                }
+                <Typography variant="h4"><b>Invite</b></Typography>
+                <div className='flex flex-col items-center bg-slate-300 h-80 w-full p-2 overflow-auto space-y-2 border border-slate-300'>
+                    {friendsRenderList 
+                        ?
+                        friendsRenderList.map((friend, index) => (
+                            <Paper elevation={2} key={index} sx={{ minHeight: "50px", width: "100%" }}>
+                                <div className="flex items-center justify-between h-[50px] px-3">
+                                    <Typography variant="subtitle1" sx={{ overflow: 'auto', maxWidth: '200px' }}>{friend.username}</Typography>
+                                    <Button variant="outlined" size='small' onClick={() => handleInviteClick(friend.uuid)}>Invite</Button>
+                                </div>
+                            </Paper>
+                        ))
+                        :
+                        <div className="h-full flex justify-center items-center">
+                            <CircularProgress />
+                        </div>
+                    }
+                </div>
+                <Button variant="contained" onClick={onClose}>Done</Button>
+            </div>
+        </Modal>
+    )
+}
 
 export default function Lobby() {
     const {userDb, lobby, setLobby} = useContext(Context);
@@ -27,16 +73,25 @@ export default function Lobby() {
     const [modalOpen, setModalOpen] = useState(false);
     const [displayError, setDisplayError] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
+    const [friendsRenderList, setFriendsRenderList] = useState(null);
 
-    const friendsList = [
-        "friend_01",
-        "friend_02",
-        "friend_03",
-        "friend_04",
-        "friend_05",
-        "friend_06",
-        "friend_07",
-    ]
+    // Initialize friends list information for invites
+    const initFriendsRenderList = async () => {
+        // Reference for using async await with array map:
+        // https://stackoverflow.com/questions/40140149/use-async-await-with-array-map
+        let list = await Promise.all(userDb.friends.map(async (friendUuid) => {
+            return await getUser(friendUuid)
+                .then((friend) => ({ uuid: friend.uuid, username: friend.username }))
+                .catch((error) => console.log(error));
+        }));
+        setFriendsRenderList(list);
+    }
+
+    // Reference for async state setting with useEffect:
+    // https://stackoverflow.com/questions/71769990/react-18-destroy-is-not-a-function
+    useEffect(() => {
+        initFriendsRenderList();
+    }, [])
 
     // Listen to real-time updates from the lobby
     // Reference: https://stackoverflow.com/questions/59944658/which-react-hook-to-use-with-firestore-onsnapshot
@@ -58,6 +113,10 @@ export default function Lobby() {
         });
         return () => unsubscribe();
     }, []);
+
+    const handleInviteClick = (friendUuid) => {
+        console.log("invite sent to " + friendUuid);
+    }
 
     async function handleJoinPlayersClick() {
         if (lobby.players.length >= MAX_PLAYERS) {
@@ -121,33 +180,18 @@ export default function Lobby() {
 
                     <Typography variant='h4'><b>Room Code:</b> {lobby ? lobby.code : <></>}</Typography>
 
-                    <Modal
-                        open={modalOpen}
-                        onClose={() => setModalOpen(false)}
-                        sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}
-                    >
-                        <div className='flex flex-col items-center bg-white w-96 h-fit p-6 space-y-4'>
-                            <Typography variant="h4"><b>Invite</b></Typography>
-                            <div className='flex flex-col items-center bg-slate-300 h-80 w-full p-2 overflow-auto space-y-2 border border-slate-300'>
-                                {friendsList.map((name, index) => (
-                                    <Paper elevation={2} key={index} sx={{ minHeight: "50px", width: "100%" }}>
-                                        <div className="flex items-center justify-between h-[50px] px-3">
-                                            <Typography variant="subtitle1" sx={{ overflow: 'auto', maxWidth: '200px' }}>{name}</Typography>
-                                            <Button variant="outlined" size='small'>Invite</Button>
-                                        </div>
-                                    </Paper>
-                                ))}
-                            </div>
-                            <Button variant="contained" onClick={() => setModalOpen(false)}>Done</Button>
-                        </div>
-                    </Modal>
+                    <InviteFriendsModal 
+                        isOpen={modalOpen} 
+                        onClose={() => setModalOpen(false)} 
+                        friendsRenderList={friendsRenderList} 
+                        onInvite={handleInviteClick} />
 
                     <div className='flex justify-center w-full space-x-4'>
                         <div className='flex flex-col items-center w-1/2 space-y-2 p-2'>
                             <Typography variant="h5"><b>Players</b></Typography>
                             <div className='flex flex-col items-center h-80 w-full bg-slate-300 overflow-auto p-2 space-y-2 border border-slate-300'>
                                 {lobby && lobby.players.map((player, index) => (
-                                    <Paper elevation="2" key={index} sx={{ minHeight: "50px", width: "100%" }}>
+                                    <Paper elevation={2} key={index} sx={{ minHeight: "50px", width: "100%" }}>
                                         <div className='flex items-center justify-center h-full'>
                                             <Typography variant="h6">{player.username}</Typography>
                                         </div>
@@ -160,7 +204,7 @@ export default function Lobby() {
                             <Typography variant="h5"><b>Spectators</b></Typography>
                             <div className='flex flex-col items-center h-80 w-full bg-slate-300 overflow-auto p-2 space-y-2 border border-slate-300'>
                                 {lobby && lobby.spectators.map((spectator, index) => (
-                                    <Paper elevation="2" key={index} sx={{ minHeight: "50px", width: "100%" }}>
+                                    <Paper elevation={2} key={index} sx={{ minHeight: "50px", width: "100%" }}>
                                         <div className='flex items-center justify-center h-full'>
                                             <Typography variant="h6">{spectator.username}</Typography>
                                         </div>
@@ -173,15 +217,15 @@ export default function Lobby() {
 
                     <div className='flex items-center justify-between w-full'>
                         <div className="w-[100px]">
-                            <Button variant="outlined" fullWidth="true" onClick={() => setModalOpen(true)}>Invite</Button>
+                            <Button variant="outlined" fullWidth={true} onClick={() => setModalOpen(true)}>Invite</Button>
                         </div>
                         <div className="w-[100px]">
                             {isHost && 
-                                <Button variant="contained" size="large" fullWidth="true" onClick={handleStartGameClick}>Start</Button>
+                                <Button variant="contained" size="large" fullWidth={true} onClick={handleStartGameClick}>Start</Button>
                             }
                         </div>
                         <div className="w-[100px]">
-                            <Button variant="outlined" fullWidth="true" onClick={handleLeaveClick}>Leave</Button>
+                            <Button variant="outlined" fullWidth={true} onClick={handleLeaveClick}>Leave</Button>
                         </div>
                     </div>
                 </div>
