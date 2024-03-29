@@ -38,6 +38,8 @@ export default function Friends() {
             let userUpdate = User.fromFirestore(doc);
             setUserDb(userUpdate);
 
+            // Reference for using async await with array map:
+            // https://stackoverflow.com/questions/40140149/use-async-await-with-array-map
             let friendsRenderList = await Promise.all(userUpdate.friends.map(async (friendUuid) => {
                 return await getUser(friendUuid)
                     .then((friend) => ({ uuid: friend.uuid, username: friend.username }))
