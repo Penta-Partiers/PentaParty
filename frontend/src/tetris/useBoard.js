@@ -103,6 +103,25 @@ export function boardStateReducer(state, action) {
     return newState;
 }
 
+/**
+ * This function adds an incomplete row to the bottom of the tetris board
+ * @param {array[array[number]]} board An array of arrays representing the Tetris board
+ */
+export function addIncompleteRow(board) {
+    // Create 3 - 5 holes in the new line
+    var numHoles = Math.floor(Math.random() * 3) + 3
+    board.splice(0, 1)
+    board.push(new Array(board[0].length).fill(1))
+    removedItems = new Set()
+    while (removedItems.size < numHoles) {
+      var newGap = Math.floor(Math.random() * board[0].length)
+      if (!removedItems.has(newGap)) {
+        removedItems.add(newGap)
+        board[NUM_ROWS - 1][newGap] = 0
+      }
+    }
+}
+
 export function lowerRows(board, rows) {
     // rows array must be in descending order (from the bottom of the board to the top, with the value decreasing because row 0 is on the top)
     rows.sort()
