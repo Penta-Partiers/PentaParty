@@ -7,7 +7,7 @@ import { Context } from "../auth/AuthContext";
 // Database
 import { db } from "../firebase.js";
 import { doc, onSnapshot } from "firebase/firestore";
-import { User, addFriend, addPendingFriend, getUser, getUuidByEmail, removePendingFriend } from '../database/models/user';
+import { User, addFriend, addPendingFriend, getUser, getUuidByEmail, removeFriend, removePendingFriend } from '../database/models/user';
 
 // Routing
 import { useNavigate } from "react-router-dom";
@@ -65,10 +65,13 @@ export default function Friends() {
         navigate("/home");
     }
 
-    // TODO: Currently modifies the temporary friends list for testing,
-    // later this will interact with the backend/firebase to remove the friend
-    function handleRemoveFriendClick(id) {
-        setFriendsList(friendsList.filter(friend => friend.id !== id));
+    async function handleRemoveFriendClick(friendUuid) {
+        // Remove friend from current user's friends list
+        await removeFriend(userDb, friendUuid);
+
+        // Remove current user from friend's friends list
+        await getUser(friendUuid)
+            .then(async (friend) => await removeFriend(friend, userDb.uuid));
     }
 
     async function handleAcceptFriendRequestClick(requesterUuid) {
