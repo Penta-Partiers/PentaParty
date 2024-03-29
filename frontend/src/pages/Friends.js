@@ -79,9 +79,12 @@ export default function Friends() {
         await addFriend(userDb, requesterUuid);
         await removePendingFriend(userDb, requesterUuid);
 
-        // Add the current user to the requester's friends list
+        // Add the current user to the requester's friends list and clear them from their pending list
         await getUser(requesterUuid)
-            .then(async (requester) => await addFriend(requester, userDb.uuid));
+            .then(async (requester) => {
+                await addFriend(requester, userDb.uuid);
+                await removePendingFriend(requester, userDb.uuid);
+            });
     }
 
     async function handleDeclineFriendRequestClick(requesterUuid) {
@@ -146,8 +149,8 @@ export default function Friends() {
                     content = (
                         <div className="flex flex-col space-y-2">
                             {friendsList.map((friend, index) => (
-                                <Paper elevation={2} key={index} sx={{ minHeight: '50px' }}>
-                                    <div className="flex items-center justify-between h-[50px] px-8">
+                                <Paper elevation={2} key={index} sx={{ height: "fit-content" }}>
+                                    <div className="flex items-center justify-between h-fit p-4">
                                         <Typography variant="h6" sx={{ overflow: 'auto', maxWidth: '200px' }}>{friend.username}</Typography>
                                         <Button variant="outlined" onClick={() => handleRemoveFriendClick(friend.uuid)}>Remove</Button>
                                     </div>
@@ -209,8 +212,8 @@ export default function Friends() {
                     content = (
                         <div className="flex flex-col space-y-2">
                             {pendingFriendsList.map((pendingFriend, index) => (
-                                <Paper elevation={2} key={index} sx={{ minHeight: '50px' }}>
-                                    <div className="flex items-center justify-between h-[50px] px-8">
+                                <Paper elevation={2} key={index} sx={{ height: "fit-content" }}>
+                                    <div className="flex items-center justify-between h-fit p-4">
                                         <Typography variant="h6" sx={{ overflow: 'auto', maxWidth: '200px' }}>{pendingFriend.username}</Typography>
                                         <div className='flex space-x-2'>
                                             <Button variant="contained" onClick={() => handleAcceptFriendRequestClick(pendingFriend.uuid)}>Accept</Button>
