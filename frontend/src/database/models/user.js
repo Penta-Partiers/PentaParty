@@ -146,7 +146,7 @@ export async function getUuidByEmail(email) {
     } else if (querySnapShot.size > 1) {
       throw new Error("found more than one documents with email " + email);
     } else {
-      return querySnapShot.docs[0].data().uuid;
+      return querySnapShot.docs[0].id;
     }
   } catch (e) {
     throw e;
