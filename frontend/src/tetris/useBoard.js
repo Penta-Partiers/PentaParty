@@ -112,7 +112,7 @@ export function addIncompleteRow(board) {
     var numHoles = Math.floor(Math.random() * 3) + 3
     board.splice(0, 1)
     board.push(new Array(board[0].length).fill(1))
-    removedItems = new Set()
+    var removedItems = new Set()
     while (removedItems.size < numHoles) {
       var newGap = Math.floor(Math.random() * board[0].length)
       if (!removedItems.has(newGap)) {
