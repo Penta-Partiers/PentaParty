@@ -321,3 +321,33 @@ export async function startGameForLobby(lobby) {
       throw e;
     }
 }
+
+export async function inviteFriendToLobby(friendUuid, lobbyCode) {
+  if (typeof friendUuid !== "string") {
+    throw new Error("invalid friendUuid type");
+  }
+
+  const friendRef = doc(db, "user", friendUuid);
+  try {
+    await updateDoc(friendRef, {
+      lobby_invites: arrayUnion(lobbyCode)
+    });
+  } catch (e) {
+    throw e;
+  }
+}
+
+export async function removeLobbyInvite(user, lobbyCode) {
+  if (typeof lobbyCode !== "string") {
+    throw new Error("invalid lobbyCode type");
+  }
+
+  const userRef = doc(db, "user", user.uuid);
+  try {
+    await updateDoc(userRef, {
+      lobby_invites: arrayRemove(lobbyCode)
+    });
+  } catch (e) {
+    throw e;
+  }
+}
