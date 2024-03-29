@@ -117,6 +117,13 @@ export default function Friends() {
                         setInvalidEmail(false);
                         setAddFriendErrorMessage("User not found!");
                     }
+                    // Prevent user from sending a friend request to an existing friend
+                    else if (userDb.friends.find(f => f == pendingFriendUuid)) {
+                        setAddFriendEmail("");
+                        setDisplayAddFriendError(true);
+                        setInvalidEmail(false);
+                        setAddFriendErrorMessage("User already in friends list!");
+                    }
                     else {
                         await addPendingFriend(userDb, pendingFriendUuid)
                         .then(() => {
