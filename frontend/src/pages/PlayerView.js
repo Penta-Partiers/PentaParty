@@ -46,16 +46,9 @@ export default function PlayerView() {
     // Listen to real-time updates from the lobby
     // Reference: https://stackoverflow.com/questions/59944658/which-react-hook-to-use-with-firestore-onsnapshot
     useEffect(() => {
-        let docRef = collection(db, "Lobby")
-        const unsubscribe = onSnapshot(docRef, (snapshot) => {
-            snapshot.docChanges().forEach((change) => {
-                console.log("change.doc.oldIndex: ", change.oldIndex)
-                console.log("change.doc.newIndex: ", change.newIndex)
-                console.log("change.doc.type: ", change.type)
-                console.log("change.doc.doc: ", change.doc)
-            })
-
-            let lobbyUpdate = LobbyDb.fromFirestore(doc);
+        let docRef = collection(db, "lobby")
+        const unsubscribe = onSnapshot(docRef, (doc) => {
+            let lobbyUpdate = LobbyDb.fromFirestore(doc.docs.filter(d => d.id == lobby.uuid)[0]);
             setLobby(lobbyUpdate);
 
             let scoresList = Object.entries(lobbyUpdate.players).map(([playerUuid, playerData]) => (
@@ -72,19 +65,19 @@ export default function PlayerView() {
                 console.log("shape queue length before shift: ", lobbyUpdate.players[userDb.uuid].pendingShapes.length)
                 let widget = lobbyUpdate.players[userDb.uuid].pendingShapes.shift();
                 console.log("shape queue length after shift: ", lobbyUpdate.players[userDb.uuid].pendingShapes.length)
-                await popFromShapeQueue(widget);
+                popFromShapeQueue(widget);
             }
             
             // Start the game upon loading the page
             if (lobbyUpdate.status == LOBBY_STATUS_ONGOING && lobbyUpdate.players[userDb.uuid].status == LOBBY_PLAYER_STATUS_NOT_STARTED) {
                 startGame(lobbyUpdate, userDb.uuid);
-                await startPlayerIndividualGame(lobbyUpdate, userDb.uuid);
+                startPlayerIndividualGame(lobbyUpdate, userDb.uuid);
             }
             // TODO: check if all but one boards are done, and if so, end the game
             else if (lobbyUpdate.status == LOBBY_STATUS_END) {
                 navigate("/game-summary", { state: { isHost: isHost, lobby: lobbyUpdate, scoresList: scoresList } });
             }
-            else if (await isGameFinished(lobbyUpdate)) {
+            else if (isGameFinished(lobbyUpdate)) {
                 endGameForLobby(lobbyUpdate);
             }
         });
