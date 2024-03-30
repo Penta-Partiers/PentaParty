@@ -22,10 +22,10 @@ const LOBBY_CODE_LENGTH = 6;
 const LOBBY_BOARD_ROWS_LENGTH = 25;
 const LOBBY_BOARD_COLS_LENGTH = 13;
 
-const LOBBY_STATUS_OPEN = "open"
-const LOBBY_STATUS_FULL = "full"
-const LOBBY_STATUS_ONGOING = "ongoing"
-const LOBBY_STATUS_END = "end"
+export const LOBBY_STATUS_OPEN = "open";
+export const LOBBY_STATUS_FULL = "full";
+export const LOBBY_STATUS_ONGOING = "ongoing";
+export const LOBBY_STATUS_END = "end";
 
 export class PlayerHelper {
   constructor(username) {
@@ -114,6 +114,9 @@ export class Lobby {
       if (status != LOBBY_STATUS_OPEN && status != LOBBY_STATUS_ONGOING && status != LOBBY_STATUS_FULL && status != LOBBY_STATUS_END) {
         throw new Error("invalid status: " + status)
       }
+      else {
+        this.status = status;
+      }
     }
   }
 
@@ -178,6 +181,7 @@ export class Lobby {
   static fromFirestore(snapshot, options) {
     const data = snapshot.data(options);
     if (data) {
+      console.log(data)
       return new Lobby(data.code, data.host, snapshot.id, data.players, data.spectators, data.status);
     }
     return null;
@@ -219,7 +223,7 @@ export async function getLobbyByCode(code) {
   }
 }
 
-export async function isLobbyCodeExsit(code) {
+export async function isLobbyCodeExist(code) {
   if (typeof code !== "string" && code.length != LOBBY_CODE_LENGTH) {
     throw new Error("invalid lobby code");
   }
@@ -508,4 +512,34 @@ export async function endGameForLobby(lobby) {
     } catch (e) {
       throw e;
     }
+}
+
+export async function inviteFriendToLobby(friendUuid, lobbyCode) {
+  if (typeof friendUuid !== "string") {
+    throw new Error("invalid friendUuid type");
+  }
+
+  const friendRef = doc(db, "user", friendUuid);
+  try {
+    await updateDoc(friendRef, {
+      lobby_invites: arrayUnion(lobbyCode)
+    });
+  } catch (e) {
+    throw e;
+  }
+}
+
+export async function removeLobbyInvite(user, lobbyCode) {
+  if (typeof lobbyCode !== "string") {
+    throw new Error("invalid lobbyCode type");
+  }
+
+  const userRef = doc(db, "user", user.uuid);
+  try {
+    await updateDoc(userRef, {
+      lobby_invites: arrayRemove(lobbyCode)
+    });
+  } catch (e) {
+    throw e;
+  }
 }

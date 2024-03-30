@@ -11,7 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { signOut, getAuth } from "firebase/auth";
 
 // Database
-import { Lobby, createLobby } from "../database/models/lobby";
+import { Lobby, createLobby, isLobbyCodeExist, joinSpectators } from "../database/models/lobby";
 
 // Util
 import { generateLobbyCode } from "../util/util";
@@ -39,13 +39,15 @@ export default function Home() {
             icon: <AddBoxOutlinedIcon sx={{ fontSize: 70 }}/>,
             label: "Create Lobby",
             onClick: async () => {
-                console.log("clicked create lobby button")
-                // TODO: figure out how to send invites to friends
                 var lobbyCode = generateLobbyCode();
-                let lobby = new Lobby(lobbyCode, userDb.uuid, null, null, [{uuid: userDb.uuid, username: userDb.username}], false);
+                while ((await isLobbyCodeExist(lobbyCode)) == true) {
+                    lobbyCode = generateLobbyCode();
+                }
+                let lobby = new Lobby(lobbyCode, userDb.uuid);
                 await createLobby(lobby)
-                    .then(() => {
+                    .then(async () => {
                         setLobby(lobby);
+                        await joinSpectators(lobby, userDb.uuid, userDb.username);
                         navigate("/lobby/" + lobbyCode, { state: { isHost: true } });
                     })
                     .catch((e) => console.log(e));
