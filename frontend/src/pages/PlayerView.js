@@ -1,3 +1,4 @@
+//@ts-check
 // React
 import { useState, useEffect, useContext } from 'react';
 
@@ -15,7 +16,7 @@ import { Context } from "../auth/AuthContext";
 
 // Database
 import { db } from "../firebase.js";
-import { doc, onSnapshot } from "firebase/firestore";
+import { doc, onSnapshot, collection } from "firebase/firestore";
 import { Lobby as LobbyDb, deleteLobby, inviteFriendToLobby, 
     joinPlayers, joinSpectators, leaveLobby, startGameForLobby,
     LOBBY_STATUS_OPEN, LOBBY_STATUS_FULL,
@@ -45,9 +46,13 @@ export default function PlayerView() {
     // Listen to real-time updates from the lobby
     // Reference: https://stackoverflow.com/questions/59944658/which-react-hook-to-use-with-firestore-onsnapshot
     useEffect(() => {
-        const unsubscribe = onSnapshot(doc(db, "lobby", lobby.uuid), async (doc) => {
-            doc.docChanges().forEach((change) => {
-                console.log("change.doc.data(): ", change.doc.data())
+        let docRef = collection(db, "Lobby")
+        const unsubscribe = onSnapshot(docRef, (snapshot) => {
+            snapshot.docChanges().forEach((change) => {
+                console.log("change.doc.oldIndex: ", change.oldIndex)
+                console.log("change.doc.newIndex: ", change.newIndex)
+                console.log("change.doc.type: ", change.type)
+                console.log("change.doc.doc: ", change.doc)
             })
 
             let lobbyUpdate = LobbyDb.fromFirestore(doc);
