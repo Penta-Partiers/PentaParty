@@ -1,26 +1,36 @@
+// React
+import { useEffect } from "react";
+
 // Routing
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 // Material UI
 import { Button, Typography } from "@mui/material"
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 
+// Database
+import { deleteLobby } from "../database/models/lobby";
+
 export default function GameSummary() {
+    const { state } = useLocation();
+    const { isHost, lobby, scoresList } = state;
     const navigate = useNavigate();
 
-    // Temporary results data
-    const results = [
-        {name: "player_01", score: 10000},
-        {name: "player_02", score: 20000},
-        {name: "player_03", score: 3000},
-        {name: "player_04", score: 2000},
-    ]
+    // Host deletes the lobby in the database
+    useEffect(() => {
+        async function lobbyDelete() {
+            if (isHost) {
+                await deleteLobby(lobby);
+            }
+        }
+        lobbyDelete();
+    }, []);
 
     // Finds the player with the highest score and returns their name
     function getWinningPlayerName(results) {
         return results.reduce((prev, current) => {
             return (prev && prev.score > current.score) ? prev : current
-        }).name;
+        }).username;
     }
 
     // Comparison function for sorting scores in descending order
@@ -47,7 +57,7 @@ export default function GameSummary() {
                     <Typography variant="h4">Winner</Typography>
                     <div className="flex space-x-2 items-center">
                         <EmojiEventsIcon sx={{ fontSize: 60 }}/>
-                        <Typography variant="h3"><b>{getWinningPlayerName(results)}</b></Typography>
+                        <Typography variant="h3"><b>{getWinningPlayerName(scoresList)}</b></Typography>
                     </div>
                 </div>
                 <div className="flex flex-col items-center w-full">
@@ -55,9 +65,9 @@ export default function GameSummary() {
                         <Typography variant="h6"><b>Player</b></Typography>
                         <Typography variant="h6"><b>Score</b></Typography>
                     </div>
-                    {results.sort(compareScores).map((data, index) => (
+                    {scoresList && scoresList.sort(compareScores).map((data, index) => (
                         <div key={index} className="flex justify-between items-center w-full">
-                            <Typography variant="h6">{data.name}</Typography>
+                            <Typography variant="h6">{data.username}</Typography>
                             <Typography variant="h6">{data.score}</Typography>
                         </div>
                     ))}

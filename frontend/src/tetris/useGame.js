@@ -4,8 +4,12 @@ import { useEffect, useState, useCallback } from 'react';
 // Custom hooks
 import { useInterval } from './useInterval';
 import { useBoard, checkEndGame } from './useBoard';
+import { endPlayerIndividualGame, updateBoard, updateScore } from '../database/models/lobby';
 
 const SCORE_MULTIPLIER = 100;
+export const GAME_STATUS_NOT_STARTED = "not started";
+export const GAME_STATUS_ONGOING = "ongoing";
+export const GAME_STATUS_ENDED = "end";
 
 export function useGame() {
     const [{ board, currentColor }, dispatchBoardState] = useBoard();
@@ -13,26 +17,33 @@ export function useGame() {
     const [score, setScore] = useState(0);
     const [tickSpeed, setTickSpeed] = useState(null);
     const [userInput, setUserInput] = useState([]);
+    const [lobby, setLobby] = useState(null);
+    const [playerUuid, setPlayerUuid] = useState("");
+    const [gameStatus, setGameStatus] = useState(GAME_STATUS_NOT_STARTED);
 
     // TODO in the future: custom hook for managing player interactions?
     //  - stuff like adding incomplete rows when another player completes a row
     //  - Or maybe just a useEffect
 
-    const startGame = () => {
+    const startGame = (lobby, playerUuid) => {
         console.log("game started!"); // Debug
         setScore(0);
-        setGameInProgress(true);
+        // setGameInProgress(true);
+        setGameStatus(GAME_STATUS_ONGOING);
         setTickSpeed(1000);
         dispatchBoardState({ type: 'start' });
+        setLobby(lobby);
+        setPlayerUuid(playerUuid);
     }
 
     // Continuously run the game loop (if it's been started)
     useInterval(() => {
-        if (!gameInProgress) {
-            console.log("game is over!") // Debug
+        if (gameStatus == GAME_STATUS_ENDED) {
+            // console.log("game is over!") // Debug
             return;
         }
         dispatchBoardState({ type: 'lower' });
+        pushBoardUpdate();
     }, tickSpeed);
 
     // Continually check the board state to see if the game is over
@@ -40,9 +51,19 @@ export function useGame() {
 
     function endGameCheck() {
         if (checkEndGame(board)) {
-            setGameInProgress(false);
+            // setGameInProgress(false);
+            setGameStatus(GAME_STATUS_ENDED);
         }
     }
+
+    useEffect(() => {
+        async function endGame() {
+            if (gameStatus == GAME_STATUS_ENDED) {
+                await endPlayerIndividualGame(lobby, playerUuid);
+            }
+        }
+        endGame();
+    }, [gameStatus]);
 
     // Using useCallback() for the event listeners below so that React doesn't
     // add multiple copies of the same event listener
@@ -76,7 +97,7 @@ export function useGame() {
     // Add the event listeners when the game is started, and remove
     // them when the game finishes
     useEffect(() => {
-        if (gameInProgress) {
+        if (gameStatus == GAME_STATUS_ONGOING) {
             window.addEventListener('keyup', keyUpEventListener);
             window.addEventListener('keydown', keyDownEventListener);
         }
@@ -84,13 +105,17 @@ export function useGame() {
             window.removeEventListener('keyup', keyUpEventListener);
             window.removeEventListener('keydown', keyDownEventListener);
         }
-    }, [gameInProgress, keyUpEventListener, keyDownEventListener])
+    }, [gameStatus, keyUpEventListener, keyDownEventListener])
 
     // Whenever the board changes, update the score (if possible)
-    useEffect(updateScore, [board, score, checkCompleteRows]);
+    useEffect(() => {updatePlayerScore()}, [board, score, checkCompleteRows]);
 
-    function updateScore() {
-        setScore(score + checkCompleteRows(board));
+    async function updatePlayerScore() {
+        if (lobby != null) {
+            let newScore = score + checkCompleteRows(board)
+            setScore(newScore);
+            await updateScore(lobby, playerUuid, newScore);
+        }
     }
 
     function checkCompleteRows(board) {
@@ -119,5 +144,9 @@ export function useGame() {
         return removedRows.length * SCORE_MULTIPLIER;
     }
 
-    return { startGame, board, score, currentColor };
+    async function pushBoardUpdate() {
+        await updateBoard(lobby, playerUuid, board);
+    }
+
+    return { startGame, board, score, currentColor, gameStatus, dispatchBoardState };
 }

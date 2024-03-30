@@ -145,7 +145,7 @@ export function useWidget() {
         setWidget(clearWidget());
     }
 
-    return [widget, onWidgetClick, onClearClick];
+    return [widget, setWidget, onWidgetClick, onClearClick];
 }
 
 /**
