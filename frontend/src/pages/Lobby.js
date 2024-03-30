@@ -112,14 +112,11 @@ export default function Lobby() {
             // Once game has started, redirect players and spectators accordingly
             if (lobbyUpdate && lobbyUpdate.status == LOBBY_STATUS_ONGOING) {
                 console.log("game started!");
-                // if (lobbyUpdate.players.find(p => p.uuid == userDb.uuid)) {
-                //     navigate("/player");
-                // }
                 if (Object.keys(lobbyUpdate.players).find(playerUuid => playerUuid == userDb.uuid)) {
-                    navigate("/player");
+                    navigate("/player", { state: { isHost: isHost } });
                 }
                 else {
-                    navigate("/spectator");
+                    navigate("/spectator", { state: { isHost: isHost } });
                 }
             }
         });
@@ -205,13 +202,6 @@ export default function Lobby() {
                         <div className='flex flex-col items-center w-1/2 space-y-2 p-2'>
                             <Typography variant="h5"><b>Players</b></Typography>
                             <div className='flex flex-col items-center h-80 w-full bg-slate-300 overflow-auto p-2 space-y-2 border border-slate-300'>
-                                {/* {(lobby && lobby.players) && lobby.players.map((player, index) => (
-                                    <Paper elevation={2} key={index} sx={{ minHeight: "50px", width: "100%" }}>
-                                        <div className='flex items-center justify-center h-full'>
-                                            <Typography variant="h6">{player.username}</Typography>
-                                        </div>
-                                    </Paper>
-                                ))} */}
                                 {lobby && Object.entries(lobby.players).map(([playerId, playerData]) => (
                                     <Paper elevation={2} key={playerId} sx={{ minHeight: "50px", width: "100%" }}>
                                         <div className='flex items-center justify-center h-full'>
@@ -225,13 +215,6 @@ export default function Lobby() {
                         <div className='flex flex-col items-center w-1/2 space-y-2 p-2'>
                             <Typography variant="h5"><b>Spectators</b></Typography>
                             <div className='flex flex-col items-center h-80 w-full bg-slate-300 overflow-auto p-2 space-y-2 border border-slate-300'>
-                                {/* {lobby && lobby.spectators.map((spectator, index) => (
-                                    <Paper elevation={2} key={index} sx={{ minHeight: "50px", width: "100%" }}>
-                                        <div className='flex items-center justify-center h-full'>
-                                            <Typography variant="h6">{spectator.username}</Typography>
-                                        </div>
-                                    </Paper>
-                                ))} */}
                                 {lobby && Object.entries(lobby.spectators).map(([spectatorId, spectatorData]) => (
                                     <Paper elevation={2} key={spectatorId} sx={{ minHeight: "50px", width: "100%" }}>
                                         <div className='flex items-center justify-center h-full'>
