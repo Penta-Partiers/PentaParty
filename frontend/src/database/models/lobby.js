@@ -69,7 +69,7 @@ export class PlayerHelper {
 }
 
 export class Lobby {
-  constructor(code, hostUuid, uuid, players, spectators, status) {
+  constructor(code, hostUuid, uuid, playerBoards, playerPendingRows, playerPendingShapes, players, spectators, status) {
     if (typeof code !== "string" && code.length != LOBBY_CODE_LENGTH) {
       throw new Error("invalid lobby code");
     }
@@ -90,6 +90,36 @@ export class Lobby {
       this.uuid = uuid;
     }
 
+    if (playerBoards == null) {
+      this.playerBoards = {};
+    } else {
+      if (!(playerBoards instanceof Object)) {
+        throw new Error("playerBoards is not an Object");
+      }
+
+      this.playerBoards = playerBoards;
+    }
+
+    if (playerPendingRows == null) {
+      this.playerPendingRows = {};
+    } else {
+      if (!(playerPendingRows instanceof Object)) {
+        throw new Error("playerPendingRows is not an Object");
+      }
+
+      this.playerPendingRows = playerPendingRows;
+    }
+
+    if (playerPendingShapes == null) {
+      this.playerPendingShapes = {};
+    } else {
+      if (!(playerPendingShapes instanceof Object)) {
+        throw new Error("playerPendingShapes is not an Object");
+      }
+
+      this.playerPendingShapes = playerPendingShapes;
+    }
+
     if (players == null) {
       this.players = {};
     } else {
@@ -100,9 +130,6 @@ export class Lobby {
       this.players = players;
     }
 
-    this.playerPendingRows = 0;
-    this.playerBoards = {};
-    this.playerPendingShapes = {};
     if (spectators == null) {
       this.spectators = {};
     } else {
@@ -198,11 +225,14 @@ export class Lobby {
   static fromFirestore(snapshot, options) {
     const data = snapshot.data(options);
     if (data) {
-      console.log(data);
+      // console.log("fromFirestore received data: ", data);
       return new Lobby(
         data.code,
         data.host,
         snapshot.id,
+        data.playerBoards,
+        data.playerPendingRows,
+        data.playerPendingShapes,
         data.players,
         data.spectators,
         data.status
@@ -351,7 +381,7 @@ export async function joinPlayers(lobby, uuid, username) {
     let nField = "players." + uuid;
     let boardField = "playerBoards." + uuid;
     let pendingShapeField = "playerPendingShapes." + uuid;
-    let pendingRowsField = "playerPendingRowsField." + uuid;
+    let pendingRowsField = "playerPendingRows." + uuid;
     try {
       await updateDoc(lobbyRef, {
         [nField]: new PlayerHelper(username).toFirestore(),
@@ -387,7 +417,7 @@ export async function joinSpectators(lobby, uuid, username) {
     let dField = "players." + uuid;
     let boardField = "playerBoards." + uuid;
     let pendingShapeField = "playerPendingShapes." + uuid;
-    let pendingRowsField = "playerPendingRowsField." + uuid;
+    let pendingRowsField = "playerPendingRows." + uuid;
 
     try {
       await updateDoc(lobbyRef, {
@@ -433,7 +463,7 @@ export async function leaveLobby(lobby, uuid) {
     let dField = "players." + uuid;
     let boardField = "playerBoards." + uuid;
     let pendingShapeField = "playerPendingShapes." + uuid;
-    let pendingRowsField = "playerPendingRowsField." + uuid;
+    let pendingRowsField = "playerPendingRows." + uuid;
 
     try {
       await updateDoc(lobbyRef, {
@@ -546,6 +576,22 @@ export async function pushPendingShapes(lobby, userUuid, shape) {
   }
 }
 
+export async function popShapeQueue(lobby, userUuid, poppedShapesCount) {
+  console.log("pop shape queue being called!")
+  const docRef = doc(db, "lobby", lobby.uuid);
+  const lobbyDoc = await getDoc(docRef);
+  const shapeQueue = lobbyDoc.data()?.playerPendingShapes[userUuid];
+  shapeQueue.splice(0, poppedShapesCount)
+  let uField = "playerPendingShapes." + userUuid;
+  try {
+    await updateDoc(docRef, {
+      [uField]: shapeQueue,
+    });
+  } catch (e) {
+    throw e;
+  }
+}
+
 export async function startPlayerIndividualGame(lobby, playerUuid) {
   const docRef = doc(db, "lobby", lobby.uuid);
   let uField = "players." + playerUuid + ".status";
@@ -575,8 +621,6 @@ export async function isGameFinished(lobby) {
   const lobbyDoc = await getDoc(lobbyRef);
   const players = lobbyDoc.data()?.players;
   const playerCount = Object.keys(players).length;
-
-  console.log(players);
 
   const endedPlayers = Object.entries(players).filter(
     ([playerUuid, playerData]) => playerData.status == LOBBY_PLAYER_STATUS_END
