@@ -12,6 +12,7 @@ import {
   addDoc,
   arrayRemove,
   deleteField,
+  QueryDocumentSnapshot,
   increment,
 } from "firebase/firestore";
 import { db } from "../../firebase.js";
@@ -104,6 +105,9 @@ export class Lobby {
 
       this.players = players;
     }
+
+    this.playerBoards = {}
+    this.playerPendingShapes = {}
     if (spectators == null) {
       this.spectators = {};
     } else {
@@ -155,6 +159,8 @@ export class Lobby {
       code: this.code,
       host: this.hostUuid,
       players: this.players,
+      playerBoards: this.playerBoards,
+      playerPendingShapes: this.playerPendingShapes,
       spectators: this.spectators,
       status: this.status,
     };
@@ -401,7 +407,7 @@ export async function leaveLobby(lobby, uuid) {
 // Game communications
 export async function updateBoard(lobby, uuid, board) {
   const docRef = doc(db, "lobby", lobby.uuid);
-  let uField = "players." + uuid + ".board";
+  let uField = "playerBoards." + uuid;
   try {
     await updateDoc(docRef, {
       [uField]: PlayerHelper.nestedArrayToObject(board),
@@ -453,7 +459,7 @@ export async function pushPendingRows(lobby, userUuid) {
 
 export async function popPendingShapes(lobby, myUuid) {
   const docRef = doc(db, "lobby", lobby.uuid);
-  let uField = "players." + myUuid + ".pendingShapes";
+  let uField = "playerPendingShapes." + myUuid;
   try {
     await updateDoc(docRef, {
       [uField]: arrayRemove(0),
@@ -465,7 +471,7 @@ export async function popPendingShapes(lobby, myUuid) {
 
 export async function pushPendingShapes(lobby, userUuid, shape) {
   const docRef = doc(db, "lobby", lobby.uuid);
-  let uField = "players." + userUuid + ".pendingShapes";
+  let uField = "playerPendingShapes." + userUuid;
   try {
     await updateDoc(docRef, {
       [uField]: arrayUnion(PlayerHelper.nestedArrayToObject(shape)),
