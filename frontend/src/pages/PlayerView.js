@@ -57,18 +57,12 @@ export default function PlayerView() {
             ));
             setPlayerScores(scoresList);
 
-            // if (lobbyUpdate.playerPendingShapes[userDb.uuid].length > 0) {
-            //     let poppedShapes = lobbyUpdate.playerPendingShapes[userDb.uuid];
-            //     await popShapeQueue(lobby, userDb.uuid, poppedShapes.length);
-                // let updatedShapeQueue = shapeQueue.push(...poppedShapes);
-                // setShapeQueue(updatedShapeQueue);
-            //     console.log("updated local shape queue: ", shapeQueue);
-            // }
             console.log("lobbyUpdate shape queue: ", lobbyUpdate.playerPendingShapes[userDb.uuid]);
             if (lobbyUpdate.playerPendingShapes[userDb.uuid].length > 0) {
                 let poppedShapes = lobbyUpdate.playerPendingShapes[userDb.uuid];
                 popShapeQueue(lobby, userDb.uuid, poppedShapes.length);
-                let updatedShapeQueue = shapeQueue.push(...poppedShapes);
+                let updatedShapeQueue = [...shapeQueue]
+                updatedShapeQueue.push(...poppedShapes);
                 setShapeQueue(updatedShapeQueue);
                 console.log("updated shape queue: ", updatedShapeQueue);
             }
@@ -93,8 +87,11 @@ export default function PlayerView() {
     useEffect(() => {
         if (shapeQueue.length > 0) {
             let newShapeQueue = [...shapeQueue];
-            let widget = PlayerHelper.nestedArrayToObject(newShapeQueue.shift())
-            console.log("popped widget: ", widget);
+            console.log("newShapeQueue: ", newShapeQueue);
+            let poppedElement = newShapeQueue.shift();
+            console.log("popped element: ", poppedElement);
+            let widget = PlayerHelper.objectToNestedArray(poppedElement)
+            console.log("converted widget: ", widget);
             dispatchBoardState({ type: 'pushSpectatorShape', widget: widget });
             setShapeQueue(newShapeQueue);
         }
