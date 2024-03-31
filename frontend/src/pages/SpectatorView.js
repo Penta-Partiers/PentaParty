@@ -29,7 +29,7 @@ import { Lobby as LobbyDb, deleteLobby, inviteFriendToLobby,
 import { useNavigate, useLocation } from 'react-router-dom';
 
 export default function SpectatorView() {
-    const { userDb, lobby, setLobby } = useContext(Context);
+    const { lobby, setLobby } = useContext(Context);
     const navigate = useNavigate();
     const {state} = useLocation();
     const { isHost } = state;
@@ -75,46 +75,56 @@ export default function SpectatorView() {
             if (assignedPlayerUuid == "") {
                 let playerUuids = Object.keys(lobbyUpdate.players);
                 let playerCount = playerUuids.length;
-                setAssignedPlayerUuid(playerUuids[Math.floor(Math.random() * playerCount)]);
-                setAssignedPlayerUsername(lobbyUpdate.players[assignedPlayerUuid]?.username);
-
-                // Start timer
-                setSeconds(15);
+                let assignedUuid = playerUuids[Math.floor(Math.random() * playerCount)];
+                setAssignedPlayerUuid(assignedUuid);
+                setAssignedPlayerUsername(lobbyUpdate.players[assignedUuid].username);
+                let boardStateUpdate = PlayerHelper.objectToNestedArray(lobbyUpdate.playerBoards[assignedUuid])
+                setBoard(boardStateUpdate);
             }
             // Watch the board state of the assigned player
             else {
-                setBoard(PlayerHelper.objectToNestedArray(lobbyUpdate.players[assignedPlayerUuid].board));
+                let boardStateUpdate = PlayerHelper.objectToNestedArray(lobbyUpdate.playerBoards[assignedPlayerUuid])
+                setBoard(boardStateUpdate);
             }
         });
         return () => unsubscribe();
     }, []);
 
-    const [seconds, setSeconds] = useState(15);
+    const [timerCount, setTimerCount] = useState(0);
+
+    useEffect(() => {
+        if (assignedPlayerUuid != "") {
+            setTimerCount(15);
+        }
+    }, [assignedPlayerUuid])
 
     // Decrement the timer every second
     useEffect(() => {
-        if (assignedPlayerUuid == "") {
-            return;
-        }
-        else {
-            if (seconds > 0) {
-                setTimeout(() => setSeconds(seconds - 1), 1000);
+        let timer;
+        if (assignedPlayerUuid != "") {
+            if (timerCount > 0) {
+                timer = setTimeout(() => {
+                    setTimerCount(prevCount => prevCount - 1);
+                }, 1000);
             }
-            else {
+            else if (timerCount === 0) {
                 if (validateShape(widget)) {
                     submitShape();
-                }
-                else {
+                } else {
                     // TODO: display some sort of message to the player
-                    console.log("Invalid shape!")
+                    console.log("invalid shape");
                 }
-    
                 setAssignedPlayerUuid("");
                 setAssignedPlayerUsername("");
                 setWidget(clearWidget());
             }
         }
-    }, [assignedPlayerUuid, seconds])
+        else {
+            console.log("this happened")
+        }
+
+        return () => clearTimeout(timer);
+    }, [assignedPlayerUuid, timerCount])
 
     async function submitShape() {
         await pushPendingShapes(lobby, assignedPlayerUuid, widget);
@@ -138,7 +148,7 @@ export default function SpectatorView() {
                         <Typography variant="h3">{assignedPlayerUsername}</Typography>
                     </div>
                     <div>
-                        <Typography variant="h5">0:{seconds < 10 ? 0 : <span />}{seconds}</Typography>
+                        <Typography variant="h5">0:{timerCount < 10 ? 0 : <span />}{timerCount}</Typography>
                     </div>
                     <Widget widget={widget} onSquareClick={onWidgetClick}/>
                     <div className="flex justify-center items-center w-full space-x-3">
