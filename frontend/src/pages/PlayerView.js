@@ -1,4 +1,3 @@
-//@ts-check
 // React
 import { useState, useEffect, useContext } from 'react';
 
@@ -23,7 +22,7 @@ import { Lobby as LobbyDb, deleteLobby, inviteFriendToLobby,
     LOBBY_STATUS_ONGOING, LOBBY_STATUS_END, LOBBY_PLAYER_STATUS_NOT_STARTED, 
     startPlayerIndividualGame, 
     LOBBY_PLAYER_STATUS_END,
-    isGameFinished, endGameForLobby, popPendingShapes} from '../database/models/lobby';
+    isGameFinished, endGameForLobby, popPendingShapes, popShapeQueue, PlayerHelper} from '../database/models/lobby';
 
 // Routing
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -36,21 +35,18 @@ export default function PlayerView() {
     const { startGame, board, score, currentColor, gameStatus, dispatchBoardState } = useGame();
 
     const [playerScores, setPlayerScores] = useState(null);
-
-    async function popFromShapeQueue(widget) {
-        console.log("popFromShapeQueue: ", widget);
-        dispatchBoardState({ type: 'pushSpectatorShape', widget: widget });
-        await popPendingShapes(lobby, userDb.uuid);
-    }
+    const [shapeQueue, setShapeQueue] = useState([]);
 
     // Listen to real-time updates from the lobby
     // Reference: https://stackoverflow.com/questions/59944658/which-react-hook-to-use-with-firestore-onsnapshot
     useEffect(() => {
-        let docRef = collection(db, "lobby")
-        const unsubscribe = onSnapshot(docRef, (doc) => {
-            let lobbyUpdate = LobbyDb.fromFirestore(doc.docs.filter(d => d.id == lobby.uuid)[0]);
-            setLobby(lobbyUpdate);
+        let docRef = doc(db, "lobby", lobby.uuid)
 
+        const unsubscribe = onSnapshot(docRef, async (doc) => {
+            let lobbyUpdate = LobbyDb.fromFirestore(doc);
+            // console.log(lobbyUpdate);
+
+            // Update local copy of scoreboard
             let scoresList = Object.entries(lobbyUpdate.players).map(([playerUuid, playerData]) => (
                 {
                     uuid: playerUuid,
@@ -61,28 +57,48 @@ export default function PlayerView() {
             ));
             setPlayerScores(scoresList);
 
-            while (lobbyUpdate.players[userDb.uuid].pendingShapes.length > 0) {
-                console.log("shape queue length before shift: ", lobbyUpdate.players[userDb.uuid].pendingShapes.length)
-                let widget = lobbyUpdate.players[userDb.uuid].pendingShapes.shift();
-                console.log("shape queue length after shift: ", lobbyUpdate.players[userDb.uuid].pendingShapes.length)
-                popFromShapeQueue(widget);
+            // if (lobbyUpdate.playerPendingShapes[userDb.uuid].length > 0) {
+            //     let poppedShapes = lobbyUpdate.playerPendingShapes[userDb.uuid];
+            //     await popShapeQueue(lobby, userDb.uuid, poppedShapes.length);
+                // let updatedShapeQueue = shapeQueue.push(...poppedShapes);
+                // setShapeQueue(updatedShapeQueue);
+            //     console.log("updated local shape queue: ", shapeQueue);
+            // }
+            console.log("lobbyUpdate shape queue: ", lobbyUpdate.playerPendingShapes[userDb.uuid]);
+            if (lobbyUpdate.playerPendingShapes[userDb.uuid].length > 0) {
+                let poppedShapes = lobbyUpdate.playerPendingShapes[userDb.uuid];
+                popShapeQueue(lobby, userDb.uuid, poppedShapes.length);
+                let updatedShapeQueue = shapeQueue.push(...poppedShapes);
+                setShapeQueue(updatedShapeQueue);
+                console.log("updated shape queue: ", updatedShapeQueue);
             }
             
             // Start the game upon loading the page
             if (lobbyUpdate.status == LOBBY_STATUS_ONGOING && lobbyUpdate.players[userDb.uuid].status == LOBBY_PLAYER_STATUS_NOT_STARTED) {
                 startGame(lobbyUpdate, userDb.uuid);
-                startPlayerIndividualGame(lobbyUpdate, userDb.uuid);
+                await startPlayerIndividualGame(lobbyUpdate, userDb.uuid);
             }
             // TODO: check if all but one boards are done, and if so, end the game
             else if (lobbyUpdate.status == LOBBY_STATUS_END) {
                 navigate("/game-summary", { state: { isHost: isHost, lobby: lobbyUpdate, scoresList: scoresList } });
             }
-            else if (isGameFinished(lobbyUpdate)) {
-                endGameForLobby(lobbyUpdate);
+            else if (await isGameFinished(lobbyUpdate)) {
+                await endGameForLobby(lobbyUpdate);
             }
         });
         return () => unsubscribe();
     }, []);
+
+    // Process local shape queue
+    useEffect(() => {
+        if (shapeQueue.length > 0) {
+            let newShapeQueue = [...shapeQueue];
+            let widget = PlayerHelper.nestedArrayToObject(newShapeQueue.shift())
+            console.log("popped widget: ", widget);
+            dispatchBoardState({ type: 'pushSpectatorShape', widget: widget });
+            setShapeQueue(newShapeQueue);
+        }
+    }, [shapeQueue]);
 
     return (
         <div className="min-h-screen flex justify-center items-center">

@@ -37,13 +37,13 @@ export function useGame() {
     }
 
     // Continuously run the game loop (if it's been started)
-    useInterval(() => {
+    useInterval(async () => {
         if (gameStatus == GAME_STATUS_ENDED) {
             // console.log("game is over!") // Debug
             return;
         }
         dispatchBoardState({ type: 'lower' });
-        pushBoardUpdate();
+        await pushBoardUpdate();
     }, tickSpeed);
 
     // Continually check the board state to see if the game is over
