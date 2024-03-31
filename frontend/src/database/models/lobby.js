@@ -34,8 +34,6 @@ export const LOBBY_PLAYER_STATUS_END = "end";
 
 export class PlayerHelper {
   constructor(username) {
-    this.pendingShapes = []
-    this.board = initializeEmptyBoard()
     this.pendingRows = 0;
     this.score = 0;
     this.username = username;
@@ -44,8 +42,6 @@ export class PlayerHelper {
 
   toFirestore() {
     return {
-      pendingShapes: this.pendingShapes,
-      board: PlayerHelper.nestedArrayToObject(this.board),
       pendingRows: this.pendingRows,
       score: this.score,
       username: this.username,
@@ -328,10 +324,21 @@ export async function joinPlayers(lobby, uuid, username) {
 
     // Add them to the players list
     let nField = "players." + uuid;
+    let boardField = "playerBoards." + uuid;
+    let pendingShapeField = "playerPendingShapes." + uuid;
     try {
       await updateDoc(lobbyRef, {
         [nField]: (new PlayerHelper(username)).toFirestore()
-      }) 
+      });
+
+      await updateDoc(lobbyRef, {
+        [boardField]: PlayerHelper.nestedArrayToObject(initializeEmptyBoard())
+      });
+
+      await updateDoc(lobbyRef, {
+        [pendingShapeField]: []
+      });
+
     } catch (e) {
       throw e;
     }
@@ -349,9 +356,17 @@ export async function joinSpectators(lobby, uuid, username) {
   } else {
     // Remove from players if they are in there
     let dField = "players." + uuid;
+    let boardField = "playerBoards." + uuid;
+    let pendingShapeField = "playerPendingShapes." + uuid;
     try {
       await updateDoc(lobbyRef, {
         [dField]: deleteField()
+      });
+      await updateDoc(lobbyRef, {
+        [boardField]: deleteField()
+      });
+      await updateDoc(lobbyRef, {
+        [pendingShapeField]: deleteField()
       });
     } catch (e) {
       throw e;
@@ -382,9 +397,19 @@ export async function leaveLobby(lobby, uuid) {
   // Remove from players if they are in there
   if (uuid in players) {
     let dField = "players." + uuid;
+    let boardField = "playerBoards." + uuid;
+    let pendingShapeField = "playerPendingShapes." + uuid;
     try {
       await updateDoc(lobbyRef, {
         [dField]: deleteField()
+      });
+
+      await updateDoc(lobbyRef, {
+        [boardField]: deleteField()
+      });
+
+      await updateDoc(lobbyRef, {
+        [pendingShapeField]: deleteField()
       });
     } catch (e) {
       throw e;
