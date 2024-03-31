@@ -17,7 +17,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../../firebase.js";
 import { User } from "./user.js";
-import { initializeEmptyBoard } from "../../tetris/useBoard"
+import { initializeEmptyBoard } from "../../tetris/useBoard";
 
 const LOBBY_CODE_LENGTH = 6;
 const LOBBY_BOARD_ROWS_LENGTH = 25;
@@ -34,7 +34,6 @@ export const LOBBY_PLAYER_STATUS_END = "end";
 
 export class PlayerHelper {
   constructor(username) {
-    this.pendingRows = 0;
     this.score = 0;
     this.username = username;
     this.status = LOBBY_PLAYER_STATUS_NOT_STARTED;
@@ -42,31 +41,30 @@ export class PlayerHelper {
 
   toFirestore() {
     return {
-      pendingRows: this.pendingRows,
       score: this.score,
       username: this.username,
-      status: this.status
+      status: this.status,
     };
   }
 
   static nestedArrayToObject(nested) {
-    let rslt = {}
+    let rslt = {};
     for (let i = 0; i < nested.length; i++) {
-      rslt[i] = nested[i]
+      rslt[i] = nested[i];
     }
 
-    return rslt
+    return rslt;
   }
 
   static objectToNestedArray(obj) {
     let rslt = [];
     let idx = 0;
-    while(idx in obj) {
+    while (idx in obj) {
       rslt.push(obj[idx]);
       idx++;
     }
 
-    return rslt
+    return rslt;
   }
 }
 
@@ -102,8 +100,9 @@ export class Lobby {
       this.players = players;
     }
 
-    this.playerBoards = {}
-    this.playerPendingShapes = {}
+    this.playerPendingRows = 0;
+    this.playerBoards = {};
+    this.playerPendingShapes = {};
     if (spectators == null) {
       this.spectators = {};
     } else {
@@ -115,12 +114,16 @@ export class Lobby {
     }
 
     if (status == null) {
-      this.status = LOBBY_STATUS_OPEN
+      this.status = LOBBY_STATUS_OPEN;
     } else {
-      if (status != LOBBY_STATUS_OPEN && status != LOBBY_STATUS_ONGOING && status != LOBBY_STATUS_FULL && status != LOBBY_STATUS_END) {
-        throw new Error("invalid status: " + status)
-      }
-      else {
+      if (
+        status != LOBBY_STATUS_OPEN &&
+        status != LOBBY_STATUS_ONGOING &&
+        status != LOBBY_STATUS_FULL &&
+        status != LOBBY_STATUS_END
+      ) {
+        throw new Error("invalid status: " + status);
+      } else {
         this.status = status;
       }
     }
@@ -145,7 +148,7 @@ export class Lobby {
       this.spectators +
       "]" +
       ", " +
-      "status: " + 
+      "status: " +
       this.status
     );
   }
@@ -155,6 +158,7 @@ export class Lobby {
       code: this.code,
       host: this.hostUuid,
       players: this.players,
+      playerPendingRows: this.playerPendingRows,
       playerBoards: this.playerBoards,
       playerPendingShapes: this.playerPendingShapes,
       spectators: this.spectators,
@@ -179,18 +183,39 @@ export class Lobby {
   }
 
   setStatus(status) {
-    if (status != LOBBY_STATUS_OPEN && status != LOBBY_STATUS_ONGOING && status != LOBBY_STATUS_FULL && status != LOBBY_STATUS_END) {
-      throw new Error("invalid status: " + status)
+    if (
+      status != LOBBY_STATUS_OPEN &&
+      status != LOBBY_STATUS_ONGOING &&
+      status != LOBBY_STATUS_FULL &&
+      status != LOBBY_STATUS_END
+    ) {
+      throw new Error("invalid status: " + status);
     }
 
-    this.status = status
+    this.status = status;
   }
 
   static fromFirestore(snapshot, options) {
     const data = snapshot.data(options);
     if (data) {
-      console.log(data)
-      return new Lobby(data.code, data.host, snapshot.id, data.players, data.spectators, data.status);
+      console.log(data);
+      return new Lobby(
+        data.code,
+        data.host,
+        snapshot.id,
+        data.players,
+        data.spectators,
+        data.status
+      );
+    }
+    return null;
+  }
+
+  static fromFirestorePlayerData(snapshot, options) {
+    const data = snapshot.data(options);
+    if (data) {
+      console.log(data);
+      return data; // Object {"uuid": Shape / Board} or Number of pendingRows: number
     }
     return null;
   }
@@ -316,7 +341,7 @@ export async function joinPlayers(lobby, uuid, username) {
     let dField = "spectators." + uuid;
     try {
       await updateDoc(lobbyRef, {
-        [dField]: deleteField()
+        [dField]: deleteField(),
       });
     } catch (e) {
       throw e;
@@ -326,19 +351,23 @@ export async function joinPlayers(lobby, uuid, username) {
     let nField = "players." + uuid;
     let boardField = "playerBoards." + uuid;
     let pendingShapeField = "playerPendingShapes." + uuid;
+    let pendingRowsField = "playerPendingRowsField." + uuid;
     try {
       await updateDoc(lobbyRef, {
-        [nField]: (new PlayerHelper(username)).toFirestore()
+        [nField]: new PlayerHelper(username).toFirestore(),
       });
 
       await updateDoc(lobbyRef, {
-        [boardField]: PlayerHelper.nestedArrayToObject(initializeEmptyBoard())
+        [boardField]: PlayerHelper.nestedArrayToObject(initializeEmptyBoard()),
       });
 
       await updateDoc(lobbyRef, {
-        [pendingShapeField]: []
+        [pendingShapeField]: [],
       });
 
+      await updateDoc(lobbyRef, {
+        [pendingRowsField]: 0,
+      });
     } catch (e) {
       throw e;
     }
@@ -358,15 +387,20 @@ export async function joinSpectators(lobby, uuid, username) {
     let dField = "players." + uuid;
     let boardField = "playerBoards." + uuid;
     let pendingShapeField = "playerPendingShapes." + uuid;
+    let pendingRowsField = "playerPendingRowsField." + uuid;
+
     try {
       await updateDoc(lobbyRef, {
-        [dField]: deleteField()
+        [dField]: deleteField(),
       });
       await updateDoc(lobbyRef, {
-        [boardField]: deleteField()
+        [boardField]: deleteField(),
       });
       await updateDoc(lobbyRef, {
-        [pendingShapeField]: deleteField()
+        [pendingShapeField]: deleteField(),
+      });
+      await updateDoc(lobbyRef, {
+        [pendingRowsField]: deleteField(),
       });
     } catch (e) {
       throw e;
@@ -376,8 +410,8 @@ export async function joinSpectators(lobby, uuid, username) {
     let nField = "spectators." + uuid;
     try {
       await updateDoc(lobbyRef, {
-        [nField]: {username: username}
-      }) 
+        [nField]: { username: username },
+      });
     } catch (e) {
       throw e;
     }
@@ -399,17 +433,23 @@ export async function leaveLobby(lobby, uuid) {
     let dField = "players." + uuid;
     let boardField = "playerBoards." + uuid;
     let pendingShapeField = "playerPendingShapes." + uuid;
+    let pendingRowsField = "playerPendingRowsField." + uuid;
+
     try {
       await updateDoc(lobbyRef, {
-        [dField]: deleteField()
+        [dField]: deleteField(),
       });
 
       await updateDoc(lobbyRef, {
-        [boardField]: deleteField()
+        [boardField]: deleteField(),
       });
 
       await updateDoc(lobbyRef, {
-        [pendingShapeField]: deleteField()
+        [pendingShapeField]: deleteField(),
+      });
+
+      await updateDoc(lobbyRef, {
+        [pendingRowsField]: deleteField(),
       });
     } catch (e) {
       throw e;
@@ -421,7 +461,7 @@ export async function leaveLobby(lobby, uuid) {
     let dField = "spectators." + uuid;
     try {
       await updateDoc(lobbyRef, {
-        [dField]: deleteField()
+        [dField]: deleteField(),
       });
     } catch (e) {
       throw e;
@@ -444,9 +484,9 @@ export async function updateBoard(lobby, uuid, board) {
 
 export async function updateScore(lobby, uuid, score) {
   if (typeof score !== "number") {
-    throw new Error("score is not a number")
+    throw new Error("score is not a number");
   }
-  
+
   const docRef = doc(db, "lobby", lobby.uuid);
   let uField = "players." + uuid + ".score";
   try {
@@ -460,7 +500,7 @@ export async function updateScore(lobby, uuid, score) {
 
 export async function popPendingRows(lobby, myUuid) {
   const docRef = doc(db, "lobby", lobby.uuid);
-  let uField = "players." + myUuid + ".pendingRows";
+  let uField = "playerPendingRows." + myUuid;
   try {
     await updateDoc(docRef, {
       [uField]: increment(-1),
@@ -472,7 +512,7 @@ export async function popPendingRows(lobby, myUuid) {
 
 export async function pushPendingRows(lobby, userUuid) {
   const docRef = doc(db, "lobby", lobby.uuid);
-  let uField = "players." + userUuid + ".pendingRows";
+  let uField = "playerPendingRows." + userUuid;
   try {
     await updateDoc(docRef, {
       [uField]: increment(1),
@@ -511,7 +551,7 @@ export async function startPlayerIndividualGame(lobby, playerUuid) {
   let uField = "players." + playerUuid + ".status";
   try {
     await updateDoc(docRef, {
-      [uField]: LOBBY_PLAYER_STATUS_ONGOING
+      [uField]: LOBBY_PLAYER_STATUS_ONGOING,
     });
   } catch (e) {
     throw e;
@@ -523,7 +563,7 @@ export async function endPlayerIndividualGame(lobby, playerUuid) {
   let uField = "players." + playerUuid + ".status";
   try {
     await updateDoc(docRef, {
-      [uField]: LOBBY_PLAYER_STATUS_END
+      [uField]: LOBBY_PLAYER_STATUS_END,
     });
   } catch (e) {
     throw e;
@@ -538,11 +578,12 @@ export async function isGameFinished(lobby) {
 
   console.log(players);
 
-  const endedPlayers = Object.entries(players).filter(([playerUuid, playerData]) => playerData.status == LOBBY_PLAYER_STATUS_END);
+  const endedPlayers = Object.entries(players).filter(
+    ([playerUuid, playerData]) => playerData.status == LOBBY_PLAYER_STATUS_END
+  );
   if (endedPlayers.length == playerCount) {
     return true;
-  }
-  else {
+  } else {
     return false;
   }
 }
@@ -552,44 +593,44 @@ export async function openLobby(lobby) {
   const lobbyRef = doc(db, "lobby", lobby.uuid);
   try {
     await updateDoc(lobbyRef, {
-      status: LOBBY_STATUS_OPEN
-      });
-    } catch (e) {
-      throw e;
-    }
+      status: LOBBY_STATUS_OPEN,
+    });
+  } catch (e) {
+    throw e;
+  }
 }
 
 export async function fullLobby(lobby) {
   const lobbyRef = doc(db, "lobby", lobby.uuid);
   try {
     await updateDoc(lobbyRef, {
-      status: LOBBY_STATUS_FULL
-      });
-    } catch (e) {
-      throw e;
-    }
+      status: LOBBY_STATUS_FULL,
+    });
+  } catch (e) {
+    throw e;
+  }
 }
 
 export async function startGameForLobby(lobby) {
   const lobbyRef = doc(db, "lobby", lobby.uuid);
   try {
     await updateDoc(lobbyRef, {
-      status: LOBBY_STATUS_ONGOING
-      });
-    } catch (e) {
-      throw e;
-    }
+      status: LOBBY_STATUS_ONGOING,
+    });
+  } catch (e) {
+    throw e;
+  }
 }
 
 export async function endGameForLobby(lobby) {
   const lobbyRef = doc(db, "lobby", lobby.uuid);
   try {
     await updateDoc(lobbyRef, {
-      status: LOBBY_STATUS_END
-      });
-    } catch (e) {
-      throw e;
-    }
+      status: LOBBY_STATUS_END,
+    });
+  } catch (e) {
+    throw e;
+  }
 }
 
 export async function inviteFriendToLobby(friendUuid, lobbyCode) {
@@ -600,7 +641,7 @@ export async function inviteFriendToLobby(friendUuid, lobbyCode) {
   const friendRef = doc(db, "user", friendUuid);
   try {
     await updateDoc(friendRef, {
-      lobby_invites: arrayUnion(lobbyCode)
+      lobby_invites: arrayUnion(lobbyCode),
     });
   } catch (e) {
     throw e;
@@ -615,7 +656,7 @@ export async function removeLobbyInvite(user, lobbyCode) {
   const userRef = doc(db, "user", user.uuid);
   try {
     await updateDoc(userRef, {
-      lobby_invites: arrayRemove(lobbyCode)
+      lobby_invites: arrayRemove(lobbyCode),
     });
   } catch (e) {
     throw e;
