@@ -185,7 +185,6 @@ export default function PlayerView() {
                             )
                         })}
                     </Box>
-                    <Button onClick={startGame}>Start Game</Button>
                 </Grid>
             </Grid>
         </div>
