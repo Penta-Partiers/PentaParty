@@ -3,7 +3,10 @@ import { useState, useContext, useEffect } from 'react';
 
 // Database
 import { doc, onSnapshot } from "firebase/firestore";
-import { Lobby as LobbyDb, deleteLobby, inviteFriendToLobby, joinPlayers, joinSpectators, leaveLobby, startGameForLobby } from '../database/models/lobby';
+import { Lobby as LobbyDb, deleteLobby, inviteFriendToLobby, 
+        joinPlayers, joinSpectators, leaveLobby, startGameForLobby,
+        LOBBY_STATUS_OPEN, LOBBY_STATUS_FULL,
+        LOBBY_STATUS_ONGOING, LOBBY_STATUS_END } from '../database/models/lobby';
 import { User, getUser } from '../database/models/user.js';
 import { db } from "../firebase.js";
 
@@ -28,7 +31,6 @@ function InviteFriendsModal({ isOpen, onClose, friendsRenderList, onInvite }) {
     }
 
     function handleClose() {
-        console.log("closed modal!")
         setDisplaySuccessAlert(false);
         onClose();
     }
@@ -104,16 +106,17 @@ export default function Lobby() {
     useEffect(() => {
         const unsubscribe = onSnapshot(doc(db, "lobby", lobby.uuid), (doc) => {
             let lobbyUpdate = LobbyDb.fromFirestore(doc);
+            console.log(lobbyUpdate)
             setLobby(lobbyUpdate);
 
             // Once game has started, redirect players and spectators accordingly
-            if (lobbyUpdate && lobbyUpdate.started) {
+            if (lobbyUpdate && lobbyUpdate.status == LOBBY_STATUS_ONGOING) {
                 console.log("game started!");
-                if (lobbyUpdate.players.find(p => p.uuid == userDb.uuid)) {
-                    navigate("/player");
+                if (Object.keys(lobbyUpdate.players).find(playerUuid => playerUuid == userDb.uuid)) {
+                    navigate("/player", { state: { isHost: isHost } });
                 }
                 else {
-                    navigate("/spectator");
+                    navigate("/spectator", { state: { isHost: isHost } });
                 }
             }
         });
@@ -121,7 +124,6 @@ export default function Lobby() {
     }, []);
 
     const handleInviteClick = async (friendUuid) => {
-        // TODO: connect with db and send invite to user
         await inviteFriendToLobby(friendUuid, lobby.code)
             .catch((error) => console.log(error));
     }
@@ -162,7 +164,9 @@ export default function Lobby() {
     }
 
     async function handleStartGameClick() {
-        if (lobby.players.length > 0 && lobby.players.length <= 4 && lobby.spectators.length >= 1) {
+        let playerCount = Object.keys(lobby.players).length;
+        let spectatorCount = Object.keys(lobby.spectators).length
+        if (playerCount > 0 && playerCount <= 4 && spectatorCount >= 1) {
             await startGameForLobby(lobby);
         }
         else {
@@ -198,10 +202,10 @@ export default function Lobby() {
                         <div className='flex flex-col items-center w-1/2 space-y-2 p-2'>
                             <Typography variant="h5"><b>Players</b></Typography>
                             <div className='flex flex-col items-center h-80 w-full bg-slate-300 overflow-auto p-2 space-y-2 border border-slate-300'>
-                                {lobby && lobby.players.map((player, index) => (
-                                    <Paper elevation={2} key={index} sx={{ minHeight: "50px", width: "100%" }}>
+                                {lobby && Object.entries(lobby.players).map(([playerId, playerData]) => (
+                                    <Paper elevation={2} key={playerId} sx={{ minHeight: "50px", width: "100%" }}>
                                         <div className='flex items-center justify-center h-full'>
-                                            <Typography variant="h6">{player.username}</Typography>
+                                            <Typography variant="h6">{playerData.username}</Typography>
                                         </div>
                                     </Paper>
                                 ))}
@@ -211,10 +215,10 @@ export default function Lobby() {
                         <div className='flex flex-col items-center w-1/2 space-y-2 p-2'>
                             <Typography variant="h5"><b>Spectators</b></Typography>
                             <div className='flex flex-col items-center h-80 w-full bg-slate-300 overflow-auto p-2 space-y-2 border border-slate-300'>
-                                {lobby && lobby.spectators.map((spectator, index) => (
-                                    <Paper elevation={2} key={index} sx={{ minHeight: "50px", width: "100%" }}>
+                                {lobby && Object.entries(lobby.spectators).map(([spectatorId, spectatorData]) => (
+                                    <Paper elevation={2} key={spectatorId} sx={{ minHeight: "50px", width: "100%" }}>
                                         <div className='flex items-center justify-center h-full'>
-                                            <Typography variant="h6">{spectator.username}</Typography>
+                                            <Typography variant="h6">{spectatorData.username}</Typography>
                                         </div>
                                     </Paper>
                                 ))}

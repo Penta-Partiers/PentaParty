@@ -27,6 +27,7 @@ export function useBoard() {
             currentShapePoints: null,
             shapeQueue: [],
             currentColor: "red",
+            pushedIncompleteRows: false,
         }
     );
 
@@ -67,33 +68,67 @@ export function boardStateReducer(state, action) {
                 currentShapePoints: initialShapePoints,
                 shapeQueue: [],
                 currentColor: selectNextColor(),
+                pushedIncompleteRows: false,
             }
         case 'lower':
-            if (lowerShape(newState.board, newState.currentShapePoints)) {
-                if (!checkEndGame(newState.board)) {
+            if (!newState.pushedIncompleteRows) {
+                if (lowerShape(newState.board, newState.currentShapePoints)) {
+                    if (!checkEndGame(newState.board)) {
+                        let nextShape = getNextShape(newState.shapeQueue);
+                        renderNewShape(newState.board, nextShape);
+                        newState.currentShapePoints = nextShape;
+                        newState.currentColor = selectNextColor();
+                    }
+                }
+            }
+            else {
+                newState.pushedIncompleteRows = false;
+            }
+            break;
+        case 'translate':
+            if (!newState.pushedIncompleteRows) {
+                if (translateShape(newState.board, newState.currentShapePoints, action.direction)) {
                     let nextShape = getNextShape(newState.shapeQueue);
                     renderNewShape(newState.board, nextShape);
                     newState.currentShapePoints = nextShape;
                     newState.currentColor = selectNextColor();
                 }
             }
-            break;
-        case 'translate':
-            if (translateShape(newState.board, newState.currentShapePoints, action.direction)) {
-                let nextShape = getNextShape(newState.shapeQueue);
-                renderNewShape(newState.board, nextShape);
-                newState.currentShapePoints = nextShape;
-                newState.currentColor = selectNextColor();
+            else {
+                newState.pushedIncompleteRows = false;
             }
             break;
         case 'rotate':
-            rotateShape(newState.board, newState.currentShapePoints, action.direction);
+            if (!newState.pushedIncompleteRows) {
+                rotateShape(newState.board, newState.currentShapePoints, action.direction);
+            }
+            else {
+                newState.pushedIncompleteRows = false;
+            }
             break;
         case 'removeRow':
-            removeRow(newState.board, action.row);
+            if (!newState.pushedIncompleteRows) {
+                removeRow(newState.board, action.row);
+            }
+            else {
+                newState.pushedIncompleteRows = false;
+            }
             break;
         case 'lowerRows':
-            lowerRows(newState.board, action.rows);
+            if (!newState.pushedIncompleteRows) {
+                lowerRows(newState.board, action.rows);
+            }
+            else {
+                newState.pushedIncompleteRows = false;
+            }
+            break;
+        case 'pushSpectatorShape':
+            let widgetShapePoints = convertToShape(action.widget);
+            newState.shapeQueue.push(widgetShapePoints);
+            break;
+        case 'addIncompleteRows':
+            addIncompleteRows(newState.board, action.rowCount, newState.currentShapePoints);
+            newState.pushedIncompleteRows = true;
             break;
         default:
             // Debugging - this shouldn't ever happen
@@ -104,21 +139,49 @@ export function boardStateReducer(state, action) {
 }
 
 /**
- * This function adds an incomplete row to the bottom of the tetris board
+ * This function adds incomplete rows to the bottom of the tetris board
  * @param {array[array[number]]} board An array of arrays representing the Tetris board
+ * @param {number} rowCount The number of incomplete rows to be added
+ * @param {array[array[number]]} points The point representation of the current shape
  */
-export function addIncompleteRow(board) {
-    // Create 3 - 5 holes in the new line
-    var numHoles = Math.floor(Math.random() * 3) + 3
-    board.splice(0, 1)
-    board.push(new Array(board[0].length).fill(1))
-    var removedItems = new Set()
-    while (removedItems.size < numHoles) {
-      var newGap = Math.floor(Math.random() * board[0].length)
-      if (!removedItems.has(newGap)) {
-        removedItems.add(newGap)
-        board[NUM_ROWS - 1][newGap] = 0
-      }
+export function addIncompleteRows(board, rowCount, points) {
+    // Remove existing shape shift all of the points upwards by the number of incomplete rows
+    for (let p = 0; p < points.length; p++) {
+        let rowNumber = points[p][0]
+        let columnNumber = points[p][1]
+
+        board[rowNumber][columnNumber] = 0
+        points[p][0] -= rowCount
+    }
+
+    let incompleteRows = new Array(rowCount);
+
+    for (let i = 0; i < rowCount; i++) {
+        // Create 3 - 5 holes in the new line
+        var numHoles = Math.floor(Math.random() * 3) + 3
+        var incompleteRow =  new Array(board[0].length).fill(1)
+        var removedItems = new Set()
+
+        while (removedItems.size < numHoles) {
+            var newGap = Math.floor(Math.random() * board[0].length)
+            if (!removedItems.has(newGap)) {
+                removedItems.add(newGap)
+                incompleteRow[newGap] = 0
+            }
+        }
+
+        incompleteRows[i] = incompleteRow;
+    }
+
+    board.splice(0, rowCount);
+    board.push(...incompleteRows);
+
+    // Re-draw the shape on the board
+    for (let p = 0; p < points.length; p++) {
+        let rowNumber = points[p][0]
+        let columnNumber = points[p][1]
+
+        board[rowNumber][columnNumber] = 2
     }
 }
 
@@ -403,4 +466,81 @@ export function checkEndGame(board) {
         }
     }
     return false
+}
+
+/**
+ * Takes in a widget state and converts it to points on the board. This function assumes that it is a valid shape (contiguous and 5 or less blocks used)
+ * 
+ * @param {[[number]]} widget The state of the spectator widget
+ * @returns {array[array[number, number]]} An array of tuples that dictate the x and y position of each point making up the shape
+ */
+export function convertToShape(widget) {
+    var shape = new Array();
+    var maxY = -1
+    var minY = 999
+
+    // Create the shape from the widget
+    for (let i = 0; i < widget.length; i++) {
+        for (let j = 0; j < widget[0].length; j++) {
+            if (widget[i][j] === 1) {
+                shape.push([i, j])
+
+                if (i > maxY) {
+                    maxY = i
+                }
+                if (i < minY) {
+                    minY = i
+                }
+            }
+        }
+    }
+
+    // Rotate the shape counter clockwise if it won't fit in the top 3 rows (both maxY and minY were used, so we need to add 1 to count correctly)
+    if (maxY - minY + 1 > 3) {
+        for (let i = 0; i < shape.length; i++) {
+            let rowNumber = shape[i][0]
+            let columnNumber = shape[i][1]
+
+            // Transpose the matrix point
+            let temp = rowNumber
+            rowNumber = columnNumber
+            columnNumber = temp
+
+            // Reverse rows for counter clockwise
+            rowNumber = widget.length - rowNumber
+
+            shape[i][0] = rowNumber
+            shape[i][1] = columnNumber
+        }
+    }
+
+    // Calculate the new minY and check if the shape fits in 3 rows
+    maxY = -1
+    minY = 999
+    for (let i = 0; i < shape.length; i++) {
+        if (shape[i][0] > maxY) {
+            maxY = shape[i][0]
+        }
+        if (shape[i][0] < minY) {
+            minY = shape[i][0]
+        }
+    }
+    
+    // If the shape still doesn't fit in the top 3 rows, then something is wrong
+    if (maxY - minY + 1 > 3) {
+        console.log("[useWidget] Cannot fit widget shape into 3 rows. Ensure that the shape was validated before calling convertToShape.")
+        return null
+    }
+    
+    // Adjust the values to be in the tetris board coordinates
+    var middleColumn = Math.floor(NUM_COLS / 2)
+
+    for (let i = 0; i < shape.length; i++) {
+        shape[i][0] -= minY
+        // This converts the column to the value on the tetris board by centering the widget around the middle column
+        // i.e. Index 2 on the widget is the middle column of the board
+        shape[i][1] = middleColumn + shape[i][1] - 2
+    }
+    
+    return shape
 }
