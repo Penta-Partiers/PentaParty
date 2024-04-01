@@ -528,24 +528,24 @@ export async function updateScore(lobby, uuid, score) {
   }
 }
 
-export async function popPendingRows(lobby, myUuid) {
+export async function popPendingRows(lobby, myUuid, rowsCount) {
   const docRef = doc(db, "lobby", lobby.uuid);
   let uField = "playerPendingRows." + myUuid;
   try {
     await updateDoc(docRef, {
-      [uField]: increment(-1),
+      [uField]: increment(-1 * rowsCount),
     });
   } catch (e) {
     throw e;
   }
 }
 
-export async function pushPendingRows(lobby, userUuid) {
+export async function pushPendingRows(lobby, userUuid, rowsCount) {
   const docRef = doc(db, "lobby", lobby.uuid);
   let uField = "playerPendingRows." + userUuid;
   try {
     await updateDoc(docRef, {
-      [uField]: increment(1),
+      [uField]: increment(rowsCount),
     });
   } catch (e) {
     throw e;
@@ -577,7 +577,6 @@ export async function pushPendingShapes(lobby, userUuid, shape) {
 }
 
 export async function popShapeQueue(lobby, userUuid, poppedShapesCount) {
-  console.log("pop shape queue being called!")
   const docRef = doc(db, "lobby", lobby.uuid);
   const lobbyDoc = await getDoc(docRef);
   const shapeQueue = lobbyDoc.data()?.playerPendingShapes[userUuid];

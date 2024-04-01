@@ -23,7 +23,7 @@ import { Lobby as LobbyDb, deleteLobby, inviteFriendToLobby,
     LOBBY_STATUS_ONGOING, LOBBY_STATUS_END, LOBBY_PLAYER_STATUS_NOT_STARTED, 
     startPlayerIndividualGame, 
     LOBBY_PLAYER_STATUS_END,
-    isGameFinished, PlayerHelper, pushPendingShapes} from '../database/models/lobby';
+    isGameFinished, PlayerHelper, pushPendingShapes, endGameForLobby, LOBBY_PLAYER_STATUS_ONGOING} from '../database/models/lobby';
 
 // Routing
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -47,16 +47,16 @@ export default function SpectatorView() {
 
     const [assignedPlayerUuid, setAssignedPlayerUuid] = useState("");
     const [assignedPlayerUsername, setAssignedPlayerUsername] = useState("");
-    const [playerScores, setPlayerScores] = useState(null);
+    const [players, setPlayers] = useState(null);
 
     // Listen to real-time updates from the lobby
     // Reference: https://stackoverflow.com/questions/59944658/which-react-hook-to-use-with-firestore-onsnapshot
     useEffect(() => {
         const unsubscribe = onSnapshot(doc(db, "lobby", lobby.uuid), async (doc) => {
             let lobbyUpdate = LobbyDb.fromFirestore(doc);
-            setLobby(lobbyUpdate);
+            // setLobby(lobbyUpdate);
 
-            let scoresList = Object.entries(lobbyUpdate.players).map(([playerUuid, playerData]) => (
+            let players = Object.entries(lobbyUpdate.players).map(([playerUuid, playerData]) => (
                 {
                     uuid: playerUuid,
                     username: playerData.username,
@@ -64,20 +64,27 @@ export default function SpectatorView() {
                     status: playerData.status
                 }
             ));
-            setPlayerScores(scoresList);
+            setPlayers(players);
             
             // Redirect to game summary page upon game end
             if (lobbyUpdate.status == LOBBY_STATUS_END) {
-                navigate("/game-summary", { state: { isHost: isHost, lobby: lobbyUpdate, scoresList: scoresList } });
+                navigate("/game-summary", { state: { isHost: isHost, lobby: lobbyUpdate, scoresList: players } });
+            } 
+            else if (isHost && await isGameFinished(lobbyUpdate)) {
+                await endGameForLobby(lobbyUpdate);
             }
 
-            // Pick a random player if none is currently assigned
+            // Pick a random player if none is currently assigned, and make sure their game is still ongoing
             if (assignedPlayerUuid == "") {
-                let playerUuids = Object.keys(lobbyUpdate.players);
+                let playerUuids = players
+                    .filter((player) => (player.status == LOBBY_PLAYER_STATUS_ONGOING))
+                    .map((player) => player.uuid);
                 let playerCount = playerUuids.length;
                 let assignedUuid = playerUuids[Math.floor(Math.random() * playerCount)];
+            
                 setAssignedPlayerUuid(assignedUuid);
                 setAssignedPlayerUsername(lobbyUpdate.players[assignedUuid].username);
+
                 let boardStateUpdate = PlayerHelper.objectToNestedArray(lobbyUpdate.playerBoards[assignedUuid])
                 setBoard(boardStateUpdate);
             }
@@ -88,7 +95,7 @@ export default function SpectatorView() {
             }
         });
         return () => unsubscribe();
-    }, []);
+    }, [assignedPlayerUuid]);
 
     const [timerCount, setTimerCount] = useState(0);
 
@@ -120,7 +127,7 @@ export default function SpectatorView() {
             }
         }
         else {
-            console.log("this happened")
+            console.log("this happened");
         }
 
         return () => clearTimeout(timer);

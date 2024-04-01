@@ -16,3 +16,17 @@ export const generateLobbyCode = () => {
     // TODO: Check for duplicated lobby code just to be sure
     return Array.from(Array(6), () => Math.floor(Math.random() * 36).toString(36)).join('').toUpperCase();
 }
+
+// Comparison function for sorting an array with objects that contain the field [object].score 
+// in descending score order
+export const compareScores = (a, b) => {
+    const scoreA = a.score;
+    const scoreB = b.score;
+    if (scoreA < scoreB) {
+        return 1;
+    }
+    if (scoreA > scoreB) {
+        return -1;
+    }
+    return 0;
+}

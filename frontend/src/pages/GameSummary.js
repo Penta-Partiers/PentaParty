@@ -11,6 +11,9 @@ import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 // Database
 import { deleteLobby } from "../database/models/lobby";
 
+// Util
+import { compareScores } from "../util/util";
+
 export default function GameSummary() {
     const { state } = useLocation();
     const { isHost, lobby, scoresList } = state;
@@ -27,24 +30,29 @@ export default function GameSummary() {
     }, []);
 
     // Finds the player with the highest score and returns their name
-    function getWinningPlayerName(results) {
-        return results.reduce((prev, current) => {
-            return (prev && prev.score > current.score) ? prev : current
-        }).username;
+    function getWinningPlayerName() {
+        if (scoresList) {
+            return scoresList.reduce((prev, current) => {
+                return (prev && prev.score > current.score) ? prev : current
+            }).username;
+        }
+        else {
+            return "";
+        }
     }
 
     // Comparison function for sorting scores in descending order
-    function compareScores(a, b) {
-        const scoreA = a.score;
-        const scoreB = b.score;
-        if (scoreA < scoreB) {
-            return 1;
-        }
-        if (scoreA > scoreB) {
-            return -1;
-        }
-        return 0;
-    }
+    // function compareScores(a, b) {
+    //     const scoreA = a.score;
+    //     const scoreB = b.score;
+    //     if (scoreA < scoreB) {
+    //         return 1;
+    //     }
+    //     if (scoreA > scoreB) {
+    //         return -1;
+    //     }
+    //     return 0;
+    // }
 
     const backClick = () => {
         navigate("/home");
@@ -57,7 +65,7 @@ export default function GameSummary() {
                     <Typography variant="h4">Winner</Typography>
                     <div className="flex space-x-2 items-center">
                         <EmojiEventsIcon sx={{ fontSize: 60 }}/>
-                        <Typography variant="h3"><b>{getWinningPlayerName(scoresList)}</b></Typography>
+                        <Typography variant="h3"><b>{getWinningPlayerName()}</b></Typography>
                     </div>
                 </div>
                 <div className="flex flex-col items-center w-full">

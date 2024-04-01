@@ -20,6 +20,7 @@ export function useGame() {
     const [lobby, setLobby] = useState(null);
     const [playerUuid, setPlayerUuid] = useState("");
     const [gameStatus, setGameStatus] = useState(GAME_STATUS_NOT_STARTED);
+    const [removedRowsCount, setRemovedRowsCount] = useState(0);
 
     // TODO in the future: custom hook for managing player interactions?
     //  - stuff like adding incomplete rows when another player completes a row
@@ -108,13 +109,15 @@ export function useGame() {
     }, [gameStatus, keyUpEventListener, keyDownEventListener])
 
     // Whenever the board changes, update the score (if possible)
-    useEffect(() => {updatePlayerScore()}, [board, score, checkCompleteRows]);
+    useEffect(() => {updatePlayerScore()}, [board, score, checkCompleteRows, gameStatus]);
 
     async function updatePlayerScore() {
-        if (lobby != null) {
-            let newScore = score + checkCompleteRows(board)
-            setScore(newScore);
-            await updateScore(lobby, playerUuid, newScore);
+        if (gameStatus != GAME_STATUS_ENDED) {
+            if (lobby != null) {
+                let newScore = score + checkCompleteRows(board)
+                setScore(newScore);
+                await updateScore(lobby, playerUuid, newScore);
+            }
         }
     }
 
@@ -141,6 +144,8 @@ export function useGame() {
             dispatchBoardState({ type: 'lowerRows', rows: removedRows });
         }
 
+        setRemovedRowsCount(removedRows.length);
+
         return removedRows.length * SCORE_MULTIPLIER;
     }
 
@@ -148,5 +153,5 @@ export function useGame() {
         await updateBoard(lobby, playerUuid, board);
     }
 
-    return { startGame, board, score, currentColor, gameStatus, dispatchBoardState };
+    return { startGame, board, score, currentColor, gameStatus, dispatchBoardState, removedRowsCount, setRemovedRowsCount };
 }

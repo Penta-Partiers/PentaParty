@@ -27,6 +27,7 @@ export function useBoard() {
             currentShapePoints: null,
             shapeQueue: [],
             currentColor: "red",
+            pushedIncompleteRows: false,
         }
     );
 
@@ -67,37 +68,67 @@ export function boardStateReducer(state, action) {
                 currentShapePoints: initialShapePoints,
                 shapeQueue: [],
                 currentColor: selectNextColor(),
+                pushedIncompleteRows: false,
             }
         case 'lower':
-            if (lowerShape(newState.board, newState.currentShapePoints)) {
-                if (!checkEndGame(newState.board)) {
+            if (!newState.pushedIncompleteRows) {
+                if (lowerShape(newState.board, newState.currentShapePoints)) {
+                    if (!checkEndGame(newState.board)) {
+                        let nextShape = getNextShape(newState.shapeQueue);
+                        renderNewShape(newState.board, nextShape);
+                        newState.currentShapePoints = nextShape;
+                        newState.currentColor = selectNextColor();
+                    }
+                }
+            }
+            else {
+                newState.pushedIncompleteRows = false;
+            }
+            break;
+        case 'translate':
+            if (!newState.pushedIncompleteRows) {
+                if (translateShape(newState.board, newState.currentShapePoints, action.direction)) {
                     let nextShape = getNextShape(newState.shapeQueue);
                     renderNewShape(newState.board, nextShape);
                     newState.currentShapePoints = nextShape;
                     newState.currentColor = selectNextColor();
                 }
             }
-            break;
-        case 'translate':
-            if (translateShape(newState.board, newState.currentShapePoints, action.direction)) {
-                let nextShape = getNextShape(newState.shapeQueue);
-                renderNewShape(newState.board, nextShape);
-                newState.currentShapePoints = nextShape;
-                newState.currentColor = selectNextColor();
+            else {
+                newState.pushedIncompleteRows = false;
             }
             break;
         case 'rotate':
-            rotateShape(newState.board, newState.currentShapePoints, action.direction);
+            if (!newState.pushedIncompleteRows) {
+                rotateShape(newState.board, newState.currentShapePoints, action.direction);
+            }
+            else {
+                newState.pushedIncompleteRows = false;
+            }
             break;
         case 'removeRow':
-            removeRow(newState.board, action.row);
+            if (!newState.pushedIncompleteRows) {
+                removeRow(newState.board, action.row);
+            }
+            else {
+                newState.pushedIncompleteRows = false;
+            }
             break;
         case 'lowerRows':
-            lowerRows(newState.board, action.rows);
+            if (!newState.pushedIncompleteRows) {
+                lowerRows(newState.board, action.rows);
+            }
+            else {
+                newState.pushedIncompleteRows = false;
+            }
             break;
         case 'pushSpectatorShape':
             let widgetShapePoints = convertToShape(action.widget);
             newState.shapeQueue.push(widgetShapePoints);
+            break;
+        case 'addIncompleteRows':
+            addIncompleteRows(newState.board, action.rowCount, newState.currentShapePoints);
+            newState.pushedIncompleteRows = true;
             break;
         default:
             // Debugging - this shouldn't ever happen
@@ -108,21 +139,49 @@ export function boardStateReducer(state, action) {
 }
 
 /**
- * This function adds an incomplete row to the bottom of the tetris board
+ * This function adds incomplete rows to the bottom of the tetris board
  * @param {array[array[number]]} board An array of arrays representing the Tetris board
+ * @param {number} rowCount The number of incomplete rows to be added
+ * @param {array[array[number]]} points The point representation of the current shape
  */
-export function addIncompleteRow(board) {
-    // Create 3 - 5 holes in the new line
-    var numHoles = Math.floor(Math.random() * 3) + 3
-    board.splice(0, 1)
-    board.push(new Array(board[0].length).fill(1))
-    var removedItems = new Set()
-    while (removedItems.size < numHoles) {
-      var newGap = Math.floor(Math.random() * board[0].length)
-      if (!removedItems.has(newGap)) {
-        removedItems.add(newGap)
-        board[NUM_ROWS - 1][newGap] = 0
-      }
+export function addIncompleteRows(board, rowCount, points) {
+    // Remove existing shape shift all of the points upwards by the number of incomplete rows
+    for (let p = 0; p < points.length; p++) {
+        let rowNumber = points[p][0]
+        let columnNumber = points[p][1]
+
+        board[rowNumber][columnNumber] = 0
+        points[p][0] -= rowCount
+    }
+
+    let incompleteRows = new Array(rowCount);
+
+    for (let i = 0; i < rowCount; i++) {
+        // Create 3 - 5 holes in the new line
+        var numHoles = Math.floor(Math.random() * 3) + 3
+        var incompleteRow =  new Array(board[0].length).fill(1)
+        var removedItems = new Set()
+
+        while (removedItems.size < numHoles) {
+            var newGap = Math.floor(Math.random() * board[0].length)
+            if (!removedItems.has(newGap)) {
+                removedItems.add(newGap)
+                incompleteRow[newGap] = 0
+            }
+        }
+
+        incompleteRows[i] = incompleteRow;
+    }
+
+    board.splice(0, rowCount);
+    board.push(...incompleteRows);
+
+    // Re-draw the shape on the board
+    for (let p = 0; p < points.length; p++) {
+        let rowNumber = points[p][0]
+        let columnNumber = points[p][1]
+
+        board[rowNumber][columnNumber] = 2
     }
 }
 
