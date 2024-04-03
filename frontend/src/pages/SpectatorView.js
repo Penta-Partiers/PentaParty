@@ -77,7 +77,7 @@ export default function SpectatorView() {
             // Pick a random player if none is currently assigned, and make sure their game is still ongoing
             if (assignedPlayerUuid == "") {
                 let playerUuids = players
-                    .filter((player) => (player.status == LOBBY_PLAYER_STATUS_ONGOING))
+                    .filter((player) => (player.status == LOBBY_PLAYER_STATUS_ONGOING || player.status == LOBBY_PLAYER_STATUS_NOT_STARTED))
                     .map((player) => player.uuid);
                 let playerCount = playerUuids.length;
                 let assignedUuid = playerUuids[Math.floor(Math.random() * playerCount)];
