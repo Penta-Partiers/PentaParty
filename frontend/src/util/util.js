@@ -28,5 +28,5 @@ export const compareScores = (a, b) => {
     if (scoreA > scoreB) {
         return -1;
     }
-    return 0;
+    return ('' + a.username).localeCompare(b.username);
 }
