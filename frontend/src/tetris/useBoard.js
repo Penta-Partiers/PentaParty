@@ -251,7 +251,7 @@ export function translateShape(board, points, direction) {
         let columnNumber = points[p][1]
 
         // If the board or a block obstructs the path
-        if (columnNumber + direction < 0 || columnNumber + direction >= NUM_COLS || board[rowNumber][columnNumber] === 1) {
+        if (columnNumber + direction < 0 || columnNumber + direction >= NUM_COLS || board[rowNumber][columnNumber + direction] === 1) {
             return false
         }
     }
