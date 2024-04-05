@@ -69,7 +69,7 @@ export class PlayerHelper {
 }
 
 export class Lobby {
-  constructor(code, hostUuid, uuid, playerBoards, playerPendingRows, playerPendingShapes, players, spectators, status) {
+  constructor(code, hostUuid, uuid, playerBoards, playerPendingRows, playerPendingShapes, playerPendingShapesSize, players, spectators, status) {
     if (typeof code !== "string" && code.length != LOBBY_CODE_LENGTH) {
       throw new Error("invalid lobby code");
     }
@@ -118,6 +118,16 @@ export class Lobby {
       }
 
       this.playerPendingShapes = playerPendingShapes;
+    }
+
+    if (playerPendingShapesSize == null) {
+      this.playerPendingShapesSize = {};
+    } else {
+      if (!(playerPendingShapesSize instanceof Object)) {
+        throw new Error("playerPendingShapesSize is not an Object");
+      }
+
+      this.playerPendingShapesSize = playerPendingShapesSize;
     }
 
     if (players == null) {
@@ -188,6 +198,7 @@ export class Lobby {
       playerPendingRows: this.playerPendingRows,
       playerBoards: this.playerBoards,
       playerPendingShapes: this.playerPendingShapes,
+      playerPendingShapesSize: this.playerPendingShapesSize,
       spectators: this.spectators,
       status: this.status,
     };
@@ -233,6 +244,7 @@ export class Lobby {
         data.playerBoards,
         data.playerPendingRows,
         data.playerPendingShapes,
+        data.playerPendingShapesSize,
         data.players,
         data.spectators,
         data.status
@@ -382,6 +394,7 @@ export async function joinPlayers(lobby, uuid, username) {
     let boardField = "playerBoards." + uuid;
     let pendingShapeField = "playerPendingShapes." + uuid;
     let pendingRowsField = "playerPendingRows." + uuid;
+    let pendingShapesSizeField = "playerPendingShapesSize." + uuid;
     try {
       await updateDoc(lobbyRef, {
         [nField]: new PlayerHelper(username).toFirestore(),
@@ -398,6 +411,10 @@ export async function joinPlayers(lobby, uuid, username) {
       await updateDoc(lobbyRef, {
         [pendingRowsField]: 0,
       });
+
+      await updateDoc(lobbyRef, {
+        [pendingShapesSizeField]: 0,
+      })
     } catch (e) {
       throw e;
     }
@@ -552,6 +569,18 @@ export async function pushPendingRows(lobby, userUuid, rowsCount) {
   }
 }
 
+export async function setPendingShapesSize(lobby, userUuid, pendingShapesSize) {
+  const docRef = doc(db, "lobby", lobby.uuid);
+  let uField = "playerPendingShapesSize." + userUuid;
+  try {
+    await updateDoc(docRef, {
+      [uField]: pendingShapesSize,
+    });
+  } catch (e) {
+    throw e;
+  }
+}
+
 export async function popPendingShapes(lobby, myUuid) {
   const docRef = doc(db, "lobby", lobby.uuid);
   let uField = "playerPendingShapes." + myUuid;
@@ -594,8 +623,8 @@ export async function popShapeQueue(lobby, userUuid, poppedShapesCount) {
 export async function getShapeQueueSize(lobby, userUuid) {
   const docRef = doc(db, "lobby", lobby.uuid);
   const lobbyDoc = await getDoc(docRef);
-  const shapeQueue = lobbyDoc.data()?.playerPendingShapes[userUuid];
-  return shapeQueue.length
+  const shapeQueueSize = lobbyDoc.data()?.playerPendingShapesSize[userUuid];
+  return shapeQueueSize
 }
 
 export async function startPlayerIndividualGame(lobby, playerUuid) {
