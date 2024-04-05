@@ -12,8 +12,7 @@ export const GAME_STATUS_ONGOING = "ongoing";
 export const GAME_STATUS_ENDED = "end";
 
 export function useGame() {
-    const [{ board, currentColor }, dispatchBoardState] = useBoard();
-    const [gameInProgress, setGameInProgress] = useState(false);
+    const [{ board, currentColor, shapeQueue }, dispatchBoardState] = useBoard();
     const [score, setScore] = useState(0);
     const [tickSpeed, setTickSpeed] = useState(null);
     const [userInput, setUserInput] = useState([]);
@@ -21,10 +20,6 @@ export function useGame() {
     const [playerUuid, setPlayerUuid] = useState("");
     const [gameStatus, setGameStatus] = useState(GAME_STATUS_NOT_STARTED);
     const [removedRowsCount, setRemovedRowsCount] = useState(0);
-
-    // TODO in the future: custom hook for managing player interactions?
-    //  - stuff like adding incomplete rows when another player completes a row
-    //  - Or maybe just a useEffect
 
     const startGame = (lobby, playerUuid) => {
         console.log("game started!"); // Debug
@@ -153,5 +148,5 @@ export function useGame() {
         await updateBoard(lobby, playerUuid, board);
     }
 
-    return { startGame, board, score, currentColor, gameStatus, dispatchBoardState, removedRowsCount, setRemovedRowsCount };
+    return { startGame, board, score, currentColor, gameStatus, dispatchBoardState, removedRowsCount, setRemovedRowsCount, shapeQueue };
 }
