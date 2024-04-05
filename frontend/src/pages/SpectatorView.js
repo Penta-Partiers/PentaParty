@@ -23,7 +23,7 @@ import { Lobby as LobbyDb, deleteLobby, inviteFriendToLobby,
     LOBBY_STATUS_ONGOING, LOBBY_STATUS_END, LOBBY_PLAYER_STATUS_NOT_STARTED, 
     startPlayerIndividualGame, 
     LOBBY_PLAYER_STATUS_END,
-    isGameFinished, PlayerHelper, pushPendingShapes, endGameForLobby, LOBBY_PLAYER_STATUS_ONGOING} from '../database/models/lobby';
+    isGameFinished, PlayerHelper, pushPendingShapes, endGameForLobby, getShapeQueueSize, LOBBY_PLAYER_STATUS_ONGOING} from '../database/models/lobby';
 
 // Routing
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -48,6 +48,7 @@ export default function SpectatorView() {
     const [assignedPlayerUuid, setAssignedPlayerUuid] = useState("");
     const [assignedPlayerUsername, setAssignedPlayerUsername] = useState("");
     const [players, setPlayers] = useState(null);
+    const [shapeQueue, setShapeQueue] = useState([]);
 
     // Listen to real-time updates from the lobby
     // Reference: https://stackoverflow.com/questions/59944658/which-react-hook-to-use-with-firestore-onsnapshot
@@ -100,9 +101,29 @@ export default function SpectatorView() {
     const [timerCount, setTimerCount] = useState(0);
 
     useEffect(() => {
-        if (assignedPlayerUuid != "") {
-            setTimerCount(15);
+        async function updateTimer() {
+            if (assignedPlayerUuid != "") {
+                let shapeQueueSize = await getShapeQueueSize(lobby, assignedPlayerUuid)
+    
+                // [DELETE]
+                console.log("[DELETE]" + shapeQueueSize)
+    
+                // Change amount of time based on the buffer size
+                if (shapeQueueSize < 5) {
+                    setTimerCount(5); // [DELETE]
+                    // setTimerCount(10);
+                } else if (shapeQueueSize < 15) {
+                    setTimerCount(20);
+                } else if (shapeQueueSize < 30) {
+                    setTimerCount(30);
+                } else {
+                    // setTimerCount(60);
+                    setTimerCount(10); // [DELETE]
+                }
+            }
         }
+
+        updateTimer()
     }, [assignedPlayerUuid])
 
     // Decrement the timer every second

@@ -591,6 +591,13 @@ export async function popShapeQueue(lobby, userUuid, poppedShapesCount) {
   }
 }
 
+export async function getShapeQueueSize(lobby, userUuid) {
+  const docRef = doc(db, "lobby", lobby.uuid);
+  const lobbyDoc = await getDoc(docRef);
+  const shapeQueue = lobbyDoc.data()?.playerPendingShapes[userUuid];
+  return shapeQueue.length
+}
+
 export async function startPlayerIndividualGame(lobby, playerUuid) {
   const docRef = doc(db, "lobby", lobby.uuid);
   let uField = "players." + playerUuid + ".status";
