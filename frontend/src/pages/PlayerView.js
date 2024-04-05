@@ -15,14 +15,14 @@ import { Context } from "../auth/AuthContext";
 
 // Database
 import { db } from "../firebase.js";
-import { doc, onSnapshot, collection } from "firebase/firestore";
-import { Lobby as LobbyDb, deleteLobby, inviteFriendToLobby, 
-    joinPlayers, joinSpectators, leaveLobby, startGameForLobby,
-    LOBBY_STATUS_OPEN, LOBBY_STATUS_FULL,
+import { doc, onSnapshot } from "firebase/firestore";
+import { Lobby as LobbyDb,
     LOBBY_STATUS_ONGOING, LOBBY_STATUS_END, LOBBY_PLAYER_STATUS_NOT_STARTED, 
     startPlayerIndividualGame, 
     LOBBY_PLAYER_STATUS_END,
-    isGameFinished, endGameForLobby, popPendingShapes, popShapeQueue, PlayerHelper, pushPendingRows, popPendingRows} from '../database/models/lobby';
+    isGameFinished, endGameForLobby, popShapeQueue, 
+    PlayerHelper, pushPendingRows, popPendingRows, 
+    setPendingShapesSize} from '../database/models/lobby';
 
 // Routing
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -41,10 +41,11 @@ export default function PlayerView() {
             gameStatus, 
             dispatchBoardState, 
             removedRowsCount,
-            setRemovedRowsCount } = useGame();
+            setRemovedRowsCount,
+            shapeQueue } = useGame();
 
     const [playerScores, setPlayerScores] = useState(null);
-    const [shapeQueue, setShapeQueue] = useState([]);
+    const [localShapeQueue, setLocalShapeQueue] = useState([]);
     const [pendingRows, setPendingRows] = useState(0);
     const [playerUuids, setPlayerUuids] = useState(null);
 
@@ -94,15 +95,13 @@ export default function PlayerView() {
             if (lobbyUpdate.playerPendingShapes[userDb.uuid].length > 0) {
                 let poppedShapes = lobbyUpdate.playerPendingShapes[userDb.uuid];
                 popShapeQueue(lobby, userDb.uuid, poppedShapes.length);
-                let updatedShapeQueue = [...shapeQueue]
+                let updatedShapeQueue = [...localShapeQueue]
                 updatedShapeQueue.push(...poppedShapes);
-                setShapeQueue(updatedShapeQueue);
+                setLocalShapeQueue(updatedShapeQueue);
             }
 
-            // TODO: If a player has any pending rows,
-            // - take a local copy
-            // - decrement the database pending rows for the user id
-            // - add incomplete rows to board
+            // If there are any pending rows, store a local count of the rows needed to be 
+            // added and pop the value in the database
             if (lobbyUpdate.playerPendingRows[userDb.uuid] > 0) {
                 let pendingRows = lobbyUpdate.playerPendingRows[userDb.uuid];
                 popPendingRows(lobby, userDb.uuid, pendingRows);
@@ -114,26 +113,21 @@ export default function PlayerView() {
 
     // Process local shape queue
     useEffect(() => {
-        if (shapeQueue.length > 0) {
-            let newShapeQueue = [...shapeQueue];
-            console.log("newShapeQueue: ", newShapeQueue);
+        if (localShapeQueue.length > 0) {
+            let newShapeQueue = [...localShapeQueue];
             let poppedElement = newShapeQueue.shift();
-            console.log("popped element: ", poppedElement);
             let widget = PlayerHelper.objectToNestedArray(poppedElement)
-            console.log("converted widget: ", widget);
             dispatchBoardState({ type: 'pushSpectatorShape', widget: widget });
-            setShapeQueue(newShapeQueue);
+            setLocalShapeQueue(newShapeQueue);
         }
-    }, [shapeQueue]);
+    }, [localShapeQueue]);
 
     // If the player has completed rows, broadcast them to the other players so that
     // they create incomplete rows on their boards
     useEffect(() => {
         if (playerUuids) {
-            console.log("playerUuids: ", playerUuids)
             if (removedRowsCount > 0) {
                 for (var playerUuid of playerUuids) {
-                    console.log("player uuid: ", playerUuid)
                     if (playerUuid != userDb.uuid) {
                         pushPendingRows(lobby, playerUuid, removedRowsCount);
                     }
@@ -146,11 +140,18 @@ export default function PlayerView() {
     // If another player has completed rows, add incomplete rows to this player's board
     useEffect(() => {
         if (pendingRows > 0) {
-            console.log("received pending rows!")
             dispatchBoardState({ type: 'addIncompleteRows', rowCount: pendingRows });
             setPendingRows(0);
         }
     }, [pendingRows])
+
+    // Whenever the shape queue length changes, update the database with the new length
+    useEffect(() => {
+        async function updateShapeQueueSize() {
+            await setPendingShapesSize(lobby, userDb.uuid, shapeQueue.length);
+        }
+        updateShapeQueueSize();
+    }, [shapeQueue])
 
     return (
         <div className="min-h-screen flex justify-center items-center">
