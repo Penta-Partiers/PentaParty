@@ -26,7 +26,7 @@ export function useBoard() {
             board: initializeEmptyBoard(),
             currentShapePoints: null,
             shapeQueue: [],
-            currentColor: "red",
+            currentColor: selectNextColor(),
             pushedIncompleteRows: false,
         }
     );
@@ -129,6 +129,10 @@ export function boardStateReducer(state, action) {
         case 'addIncompleteRows':
             addIncompleteRows(newState.board, action.rowCount, newState.currentShapePoints);
             newState.pushedIncompleteRows = true;
+            break;
+        case 'resume':
+            newState.board = action.board;
+            newState.currentShapePoints = getCurrentShapePoints(action.board);
             break;
         default:
             // Debugging - this shouldn't ever happen
@@ -556,4 +560,22 @@ export function convertToShape(widget) {
     }
     
     return shape
+}
+
+export function getCurrentShapePoints(board) {
+    let points = [];
+    for (let i = 0; i < board.length; i++) {
+        for (let j = 0; j < board[0].length; j++) {
+            if (board[i][j] == 2) {
+                points.push([i, j]);
+            }
+        }
+    }
+
+    if (points.length > 0) {
+        return points;
+    }
+    else {
+        return generateTetromino();
+    }
 }

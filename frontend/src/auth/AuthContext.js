@@ -49,6 +49,11 @@ export function AuthContext({ children }) {
         }
     });
 
+    const [isHost, setIsHost] = useState(() => {
+        const h = localStorage.getItem("isHost");
+        return h;
+    })
+
     useEffect(() => {
         // The onAuthStateChanged() function from Firebase returns an
         // unsubscribe function that stops monitoring the auth state
@@ -71,6 +76,7 @@ export function AuthContext({ children }) {
                 setUserDb(null);
                 localStorage.setItem("userDb", null);
                 localStorage.setItem("lobby", null);
+                localStorage.setItem("isHost", "false");
             }
         });
         return () => {
@@ -87,6 +93,8 @@ export function AuthContext({ children }) {
         setUserDb: setUserDb,
         lobby: lobby,
         setLobby: setLobby,
+        isHost: isHost,
+        setIsHost: setIsHost,
     }
     
     // Only display the children content once the authentication is done loading,

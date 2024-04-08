@@ -72,12 +72,12 @@ function InviteFriendsModal({ isOpen, onClose, friendsRenderList, onInvite }) {
 }
 
 export default function Lobby() {
-    const {userDb, lobby, setLobby} = useContext(Context);
+    const {userDb, lobby, isHost, setLobby} = useContext(Context);
 
-    const {state} = useLocation();
+    // const {state} = useLocation();
     const navigate = useNavigate();
 
-    const [isHost, setIsHost] = useState(state.isHost)
+    // const [isHost, setIsHost] = useState(state.isHost)
     const [modalOpen, setModalOpen] = useState(false);
     const [displayError, setDisplayError] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
@@ -85,21 +85,23 @@ export default function Lobby() {
 
     // Initialize friends list information for invites
     const initFriendsRenderList = async () => {
-        // Reference for using async await with array map:
-        // https://stackoverflow.com/questions/40140149/use-async-await-with-array-map
-        let list = await Promise.all(userDb.friends.map(async (friendUuid) => {
-            return await getUser(friendUuid)
-                .then((friend) => ({ uuid: friend.uuid, username: friend.username }))
-                .catch((error) => console.log(error));
-        }));
-        setFriendsRenderList(list);
+        if (userDb) {
+            // Reference for using async await with array map:
+            // https://stackoverflow.com/questions/40140149/use-async-await-with-array-map
+            let list = await Promise.all(userDb.friends.map(async (friendUuid) => {
+                return await getUser(friendUuid)
+                    .then((friend) => ({ uuid: friend.uuid, username: friend.username }))
+                    .catch((error) => console.log(error));
+            }));
+            setFriendsRenderList(list);
+        }
     }
 
     // Reference for async state setting with useEffect:
     // https://stackoverflow.com/questions/71769990/react-18-destroy-is-not-a-function
     useEffect(() => {
         initFriendsRenderList();
-    }, [])
+    }, [userDb])
 
     // Listen to real-time updates from the lobby
     // Reference: https://stackoverflow.com/questions/59944658/which-react-hook-to-use-with-firestore-onsnapshot
@@ -145,7 +147,7 @@ export default function Lobby() {
     }
 
     async function handleLeaveClick() {
-        if (isHost) {
+        if (isHost == "true") {
             await deleteLobby(lobby)
                 .then(() => {
                     setLobby(null);

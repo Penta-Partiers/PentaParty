@@ -32,6 +32,16 @@ export function useGame() {
         setPlayerUuid(playerUuid);
     }
 
+    const resumeGame = (lobby, playerUuid, board, score) => {
+        console.log("game resumed!"); // Debug
+        setGameStatus(GAME_STATUS_ONGOING);
+        setTickSpeed(1000);
+        dispatchBoardState({ type: 'resume', board: board });
+        setScore(score);
+        setLobby(lobby);
+        setPlayerUuid(playerUuid);
+    }
+
     // Continuously run the game loop (if it's been started)
     useInterval(async () => {
         if (gameStatus == GAME_STATUS_ENDED) {
@@ -148,5 +158,5 @@ export function useGame() {
         await updateBoard(lobby, playerUuid, board);
     }
 
-    return { startGame, board, score, currentColor, gameStatus, dispatchBoardState, removedRowsCount, setRemovedRowsCount, shapeQueue };
+    return { startGame, resumeGame, board, score, currentColor, gameStatus, dispatchBoardState, removedRowsCount, setRemovedRowsCount, shapeQueue };
 }
