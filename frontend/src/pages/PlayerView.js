@@ -57,6 +57,12 @@ export default function PlayerView() {
         const unsubscribe = onSnapshot(docRef, async (doc) => {
             let lobbyUpdate = LobbyDb.fromFirestore(doc);
 
+            // Redirect to game summary page upon game end
+            if (lobbyUpdate == null || lobbyUpdate.status == LOBBY_STATUS_END) {
+                localStorage.setItem("lobby", JSON.stringify(lobbyUpdate));
+                navigate("/game-summary", { state: { isHost: isHost } });
+            }
+
             if (playerUuids == null) {
                 setPlayerUuids(Object.keys(lobbyUpdate.players));
             }
@@ -78,9 +84,9 @@ export default function PlayerView() {
                 await startPlayerIndividualGame(lobbyUpdate, userDb.uuid);
             }
             // If the game has ended, redirect to the game summary page
-            else if (lobbyUpdate.status == LOBBY_STATUS_END) {
-                navigate("/game-summary", { state: { isHost: isHost, lobby: lobbyUpdate, scoresList: scoresList } });
-            }
+            // else if (lobbyUpdate.status == LOBBY_STATUS_END) {
+            //     navigate("/game-summary", { state: { isHost: isHost, lobby: lobbyUpdate, scoresList: scoresList } });
+            // }
             // If the host is a player, check if the game is  
             else if (isHost && await isGameFinished(lobbyUpdate)) {
                 await endGameForLobby(lobbyUpdate);
