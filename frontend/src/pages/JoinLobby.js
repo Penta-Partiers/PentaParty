@@ -33,6 +33,7 @@ export default function JoinLobby() {
         const unsubscribe = onSnapshot(doc(db, "user", userDb.uuid), async (doc) => {
             let userUpdate = User.fromFirestore(doc);
             setUserDb(userUpdate);
+            localStorage.setItem("userDb", JSON.stringify(userUpdate));
             setLobbyInvitesList(userUpdate.lobbyInvites);
         });
         return () => unsubscribe();
@@ -64,6 +65,7 @@ export default function JoinLobby() {
                             }
                         }
                         setLobby(lobby);
+                        localStorage.setItem("lobby", JSON.stringify(lobby));
                         await removeLobbyInvite(userDb, lobbyCode);
                         await joinSpectators(lobby, userDb.uuid, userDb.username);
                         navigate("/lobby/" + lobbyCode.toUpperCase(), { state: { isHost: false } });
