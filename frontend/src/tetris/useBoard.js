@@ -145,13 +145,23 @@ export function boardStateReducer(state, action) {
  * @param {array[array[number]]} points The point representation of the current shape
  */
 export function addIncompleteRows(board, rowCount, points) {
-    // Remove existing shape shift all of the points upwards by the number of incomplete rows
+    // Remove existing shape and shift all of the points upwards by the number of incomplete rows or until it hits the top
+    var shiftFactor = rowCount
     for (let p = 0; p < points.length; p++) {
         let rowNumber = points[p][0]
         let columnNumber = points[p][1]
 
         board[rowNumber][columnNumber] = 0
-        points[p][0] -= rowCount
+
+        // Change shiftFactor if we would index out of bounds
+        if (points[p][0] - shiftFactor < 0) {
+            shiftFactor = points[p][0]
+        }
+    }
+
+    // Adjust the points using the lowest shiftFactor we found
+    for (let p = 0; p < points.length; p++) {
+        points[p][0]-= shiftFactor
     }
 
     let incompleteRows = new Array(rowCount);
@@ -181,7 +191,10 @@ export function addIncompleteRows(board, rowCount, points) {
         let rowNumber = points[p][0]
         let columnNumber = points[p][1]
 
-        board[rowNumber][columnNumber] = 2
+        // If this is false, the game is over for the player
+        if (board[rowNumber][columnNumber] === 0) {
+            board[rowNumber][columnNumber] = 2
+        }
     }
 }
 
@@ -238,7 +251,7 @@ export function translateShape(board, points, direction) {
         let columnNumber = points[p][1]
 
         // If the board or a block obstructs the path
-        if (columnNumber + direction < 0 || columnNumber + direction >= NUM_COLS || board[rowNumber][columnNumber] === 1) {
+        if (columnNumber + direction < 0 || columnNumber + direction >= NUM_COLS || board[rowNumber][columnNumber + direction] === 1) {
             return false
         }
     }

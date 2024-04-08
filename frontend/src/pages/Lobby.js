@@ -106,7 +106,6 @@ export default function Lobby() {
     useEffect(() => {
         const unsubscribe = onSnapshot(doc(db, "lobby", lobby.uuid), (doc) => {
             let lobbyUpdate = LobbyDb.fromFirestore(doc);
-            console.log(lobbyUpdate)
             setLobby(lobbyUpdate);
 
             // Once game has started, redirect players and spectators accordingly

@@ -17,24 +17,19 @@ import { Context } from "../auth/AuthContext";
 // Database
 import { db } from "../firebase.js";
 import { doc, onSnapshot } from "firebase/firestore";
-import { Lobby as LobbyDb, deleteLobby, inviteFriendToLobby, 
-    joinPlayers, joinSpectators, leaveLobby, startGameForLobby,
-    LOBBY_STATUS_OPEN, LOBBY_STATUS_FULL,
-    LOBBY_STATUS_ONGOING, LOBBY_STATUS_END, LOBBY_PLAYER_STATUS_NOT_STARTED, 
-    startPlayerIndividualGame, 
-    LOBBY_PLAYER_STATUS_END,
-    isGameFinished, PlayerHelper, pushPendingShapes, endGameForLobby, LOBBY_PLAYER_STATUS_ONGOING} from '../database/models/lobby';
+import { Lobby as LobbyDb, LOBBY_STATUS_END, LOBBY_PLAYER_STATUS_NOT_STARTED,
+    isGameFinished, PlayerHelper, pushPendingShapes, 
+    endGameForLobby, getShapeQueueSize, LOBBY_PLAYER_STATUS_ONGOING} from '../database/models/lobby';
 
 // Routing
 import { useNavigate, useLocation } from 'react-router-dom';
 
 export default function SpectatorView() {
-    const { lobby, setLobby } = useContext(Context);
+    const { lobby } = useContext(Context);
     const navigate = useNavigate();
     const {state} = useLocation();
     const { isHost } = state;
 
-    // TODO: Temporary, will get board state from websocket server later
     const [board, setBoard] = useState(() => {
         var board = new Array(25);
         for (let i = 0; i < board.length; i++) {
@@ -54,9 +49,13 @@ export default function SpectatorView() {
     useEffect(() => {
         const unsubscribe = onSnapshot(doc(db, "lobby", lobby.uuid), async (doc) => {
             let lobbyUpdate = LobbyDb.fromFirestore(doc);
-            // setLobby(lobbyUpdate);
 
-            let players = Object.entries(lobbyUpdate.players).map(([playerUuid, playerData]) => (
+            // Redirect to game summary page upon game end
+            if (lobbyUpdate == null || lobbyUpdate.status == LOBBY_STATUS_END) {
+                navigate("/game-summary", { state: { isHost: isHost, lobby: lobbyUpdate, scoresList: players } });
+            }
+
+            let playersData = Object.entries(lobbyUpdate.players).map(([playerUuid, playerData]) => (
                 {
                     uuid: playerUuid,
                     username: playerData.username,
@@ -64,19 +63,16 @@ export default function SpectatorView() {
                     status: playerData.status
                 }
             ));
-            setPlayers(players);
+            setPlayers(playersData);
             
-            // Redirect to game summary page upon game end
-            if (lobbyUpdate.status == LOBBY_STATUS_END) {
-                navigate("/game-summary", { state: { isHost: isHost, lobby: lobbyUpdate, scoresList: players } });
-            } 
-            else if (isHost && await isGameFinished(lobbyUpdate)) {
+            // End the game if all players are done
+            if (isHost && await isGameFinished(lobbyUpdate)) {
                 await endGameForLobby(lobbyUpdate);
             }
 
             // Pick a random player if none is currently assigned, and make sure their game is still ongoing
             if (assignedPlayerUuid == "") {
-                let playerUuids = players
+                let playerUuids = playersData
                     .filter((player) => (player.status == LOBBY_PLAYER_STATUS_ONGOING || player.status == LOBBY_PLAYER_STATUS_NOT_STARTED))
                     .map((player) => player.uuid);
                 let playerCount = playerUuids.length;
@@ -95,14 +91,29 @@ export default function SpectatorView() {
             }
         });
         return () => unsubscribe();
-    }, [assignedPlayerUuid]);
+    }, [assignedPlayerUuid, players]);
 
     const [timerCount, setTimerCount] = useState(0);
 
     useEffect(() => {
-        if (assignedPlayerUuid != "") {
-            setTimerCount(15);
+        async function updateTimer() {
+            if (assignedPlayerUuid != "") {
+                let shapeQueueSize = await getShapeQueueSize(lobby, assignedPlayerUuid)
+    
+                // Change amount of time based on the buffer size
+                if (shapeQueueSize < 5) {
+                    setTimerCount(10);
+                } else if (shapeQueueSize < 15) {
+                    setTimerCount(20);
+                } else if (shapeQueueSize < 30) {
+                    setTimerCount(30);
+                } else {
+                    setTimerCount(60);
+                }
+            }
         }
+
+        updateTimer();
     }, [assignedPlayerUuid])
 
     // Decrement the timer every second
@@ -125,9 +136,6 @@ export default function SpectatorView() {
                 setAssignedPlayerUsername("");
                 setWidget(clearWidget());
             }
-        }
-        else {
-            console.log("this happened");
         }
 
         return () => clearTimeout(timer);
