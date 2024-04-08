@@ -69,24 +69,13 @@ export default function GameSummary() {
         updateHighScores();
     }, [scoresList]);
 
-    // Finds the player with the highest score and returns their name
-    // function getWinningPlayerName() {
-    //     if (scoresList) {
-    //         return scoresList.reduce((prev, current) => {
-    //             return (prev && prev.score > current.score) ? prev : current
-    //         }).username;
-    //     }
-    //     else {
-    //         return "";
-    //     }
-    // }
-
     const backClick = async () => {
         // Host deletes the lobby in the database
         if (isHost == "true") {
             await deleteLobby(lobby);
         }
         localStorage.setItem("lobby", null);
+        localStorage.setItem("isHost", "false");
         navigate("/home");
     }
 
@@ -96,10 +85,10 @@ export default function GameSummary() {
                 return (
                     <div className="flex flex-col items-center">
                         <Typography variant="h4">Winners</Typography>
-                        {winningPlayers.map((username, index) => (
+                        {winningPlayers.sort(compareScores).map((username, index) => (
                             <div key={index} className="flex space-x-2 items-center">
                                 <EmojiEventsIcon sx={{ fontSize: 60 }}/>
-                                <Typography variant="h3"><b>{username}</b></Typography>
+                                <Typography variant="h4"><b>{username}</b></Typography>
                             </div>
                         ))}
                     </div>
@@ -109,9 +98,9 @@ export default function GameSummary() {
                 return (
                     <div className="flex flex-col items-center">
                         <Typography variant="h4">Winner</Typography>
-                        <div className="flex space-x-2 items-center">
+                        <div className="flex space-x-2 items-center text-center">
                             <EmojiEventsIcon sx={{ fontSize: 60 }}/>
-                            <Typography variant="h3"><b>{winningPlayers[0]}</b></Typography>
+                            <Typography variant="h4"><b>{winningPlayers[0]}</b></Typography>
                         </div>
                     </div>
                 )

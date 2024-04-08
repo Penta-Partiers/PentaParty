@@ -115,15 +115,19 @@ export default function Lobby() {
             if (lobbyUpdate && lobbyUpdate.status == LOBBY_STATUS_ONGOING) {
                 console.log("game started!");
                 if (Object.keys(lobbyUpdate.players).find(playerUuid => playerUuid == userDb.uuid)) {
+                    setLobby(lobbyUpdate);
                     navigate("/player", { state: { isHost: isHost } });
                 }
                 else {
+                    setLobby(lobbyUpdate);
                     navigate("/spectator", { state: { isHost: isHost } });
                 }
-            }
+            }  
         });
+        
         return () => unsubscribe();
-    }, []);
+        
+    }, [isHost]);
 
     const handleInviteClick = async (friendUuid) => {
         await inviteFriendToLobby(friendUuid, lobby.code)
@@ -152,6 +156,7 @@ export default function Lobby() {
                 .then(() => {
                     setLobby(null);
                     localStorage.setItem("lobby", null);
+                    localStorage.setItem("isHost", "false");
                     navigate("/home");
                 })
                 .catch((e) => console.log(e));
@@ -161,6 +166,7 @@ export default function Lobby() {
                 .then(() => {
                     setLobby(null);
                     localStorage.setItem("lobby", null);
+                    localStorage.setItem("isHost", "false");
                     navigate("/home");
                 })
                 .catch((e) => console.log(e));
@@ -236,7 +242,7 @@ export default function Lobby() {
                             <Button variant="outlined" fullWidth={true} onClick={() => setModalOpen(true)}>Invite</Button>
                         </div>
                         <div className="w-[100px]">
-                            {isHost && 
+                            {(isHost === "true") && 
                                 <Button variant="contained" size="large" fullWidth={true} onClick={handleStartGameClick}>Start</Button>
                             }
                         </div>

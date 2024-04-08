@@ -65,7 +65,7 @@ export default function JoinLobby() {
                             }
                         }
                         setLobby(lobby);
-                        setIsHost(false);
+                        setIsHost("false");
                         localStorage.setItem("lobby", JSON.stringify(lobby));
                         localStorage.setItem("isHost", "false");
                         await removeLobbyInvite(userDb, lobbyCode);

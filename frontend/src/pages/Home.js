@@ -47,7 +47,7 @@ export default function Home() {
                 await createLobby(lobby)
                     .then(async () => {
                         setLobby(lobby);
-                        setIsHost(true);
+                        setIsHost("true");
                         localStorage.setItem("lobby", JSON.stringify(lobby));
                         localStorage.setItem("isHost", "true");
                         await joinSpectators(lobby, userDb.uuid, userDb.username);
