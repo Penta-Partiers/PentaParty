@@ -22,13 +22,12 @@ import { Lobby as LobbyDb, LOBBY_STATUS_END, LOBBY_PLAYER_STATUS_NOT_STARTED,
     endGameForLobby, getShapeQueueSize, LOBBY_PLAYER_STATUS_ONGOING} from '../database/models/lobby';
 
 // Routing
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 export default function SpectatorView() {
-    const { lobby, isHost } = useContext(Context);
+    const { lobby, isHost, setLobby } = useContext(Context);
+
     const navigate = useNavigate();
-    // const {state} = useLocation();
-    // const { isHost } = state;
 
     const [board, setBoard] = useState(() => {
         var board = new Array(25);
@@ -52,6 +51,7 @@ export default function SpectatorView() {
 
             // Redirect to game summary page upon game end
             if (lobbyUpdate == null || lobbyUpdate.status == LOBBY_STATUS_END) {
+                setLobby(lobbyUpdate);
                 localStorage.setItem("lobby", JSON.stringify(lobbyUpdate));
                 navigate("/game-summary");
             }
@@ -92,7 +92,7 @@ export default function SpectatorView() {
             }
         });
         return () => unsubscribe();
-    }, [assignedPlayerUuid, players]);
+    }, [assignedPlayerUuid, assignedPlayerUsername, players]);
 
     const [timerCount, setTimerCount] = useState(0);
 

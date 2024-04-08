@@ -25,7 +25,6 @@ export function AuthContext({ children }) {
     const [user, setUser] = useState();
     const [userDb, setUserDb] = useState(() => {
         const u = sessionStorage.getItem("userDb");
-        // return JSON.parse(u) || null;
         let parsed = JSON.parse(u);
         if (parsed) {
             return User.fromJson(parsed);;
@@ -39,7 +38,6 @@ export function AuthContext({ children }) {
     const [loading, setLoading] = useState(true);
     const [lobby, setLobby] = useState(() => {
         const l = localStorage.getItem("lobby");
-        // return JSON.parse(l) || null;
         let parsed = JSON.parse(l);
         if (parsed) {
             return Lobby.fromJson(parsed);

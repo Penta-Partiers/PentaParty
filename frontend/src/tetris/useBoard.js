@@ -134,6 +134,8 @@ export function boardStateReducer(state, action) {
             newState.board = action.board;
             newState.currentShapePoints = getCurrentShapePoints(action.board);
             break;
+        case 'ended':
+            newState.board = convertAllToStatic(action.board);
         default:
             // Debugging - this shouldn't ever happen
             console.error("boardStateReducer error -> invalid action type");
@@ -577,5 +579,15 @@ export function getCurrentShapePoints(board) {
     }
     else {
         return generateTetromino();
+    }
+}
+
+export function convertAllToStatic(board) {
+    for (let i = 0; i < board.length; i++) {
+        for (let j = 0; j < board[0].length; j++) {
+            if (board[i][j] == 2) {
+                board[i][j] = 1;
+            }
+        }
     }
 }

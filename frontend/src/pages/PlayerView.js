@@ -22,19 +22,16 @@ import { Lobby as LobbyDb,
     LOBBY_PLAYER_STATUS_END,
     isGameFinished, endGameForLobby, popShapeQueue, 
     PlayerHelper, pushPendingRows, popPendingRows, 
-    setPendingShapesSize,
-    LOBBY_PLAYER_STATUS_ONGOING} from '../database/models/lobby';
+    setPendingShapesSize } from '../database/models/lobby';
 
 // Routing
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 // Util
 import { compareScores } from '../util/util.js';
 
 export default function PlayerView() {
-    const { userDb, lobby, isHost } = useContext(Context);
-    // const {state} = useLocation();
-    // const { isHost } = state;
+    const { userDb, lobby, isHost, setLobby } = useContext(Context);
     const navigate = useNavigate();
     const { startGame, 
             resumeGame,
@@ -62,16 +59,17 @@ export default function PlayerView() {
 
                 // Redirect to game summary page upon game end
                 if (lobbyUpdate == null || lobbyUpdate.status == LOBBY_STATUS_END) {
+                    setLobby(lobbyUpdate);
                     localStorage.setItem("lobby", JSON.stringify(lobbyUpdate));
                     navigate("/game-summary");
                 }
 
                 // Handle disconnection
-                if (lobbyUpdate.players[userDb.uuid].status == LOBBY_PLAYER_STATUS_ONGOING && gameStatus == GAME_STATUS_NOT_STARTED) {
-                    // TODO: resume game
+                if (lobbyUpdate.players[userDb.uuid].status != LOBBY_PLAYER_STATUS_NOT_STARTED && gameStatus == GAME_STATUS_NOT_STARTED) {
                     let board = PlayerHelper.objectToNestedArray(lobbyUpdate.playerBoards[userDb.uuid]);
                     let score = lobbyUpdate.players[userDb.uuid].score;
-                    resumeGame(lobbyUpdate, userDb.uuid, board, score);
+                    let status = lobbyUpdate.players[userDb.uuid].status;
+                    resumeGame(lobbyUpdate, userDb.uuid, board, score, status);
                 }
 
                 if (playerUuids == null) {
@@ -94,10 +92,6 @@ export default function PlayerView() {
                     startGame(lobbyUpdate, userDb.uuid);
                     await startPlayerIndividualGame(lobbyUpdate, userDb.uuid);
                 }
-                // If the game has ended, redirect to the game summary page
-                // else if (lobbyUpdate.status == LOBBY_STATUS_END) {
-                //     navigate("/game-summary", { state: { isHost: isHost, lobby: lobbyUpdate, scoresList: scoresList } });
-                // }
                 // If the host is a player, check if the game is  
                 else if (isHost == "true" && await isGameFinished(lobbyUpdate)) {
                     await endGameForLobby(lobbyUpdate);

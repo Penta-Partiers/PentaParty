@@ -2,7 +2,7 @@
 import { useState, useEffect, useContext } from "react";
 
 // Routing
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 // Material UI
 import { Button, Typography } from "@mui/material"
@@ -24,15 +24,11 @@ export default function GameSummary() {
     const [scoresList, setScoresList] = useState(null);
     const [winningPlayers, setWinningPlayers] = useState(null);
 
-    // Get host flag from routing state
-    // const { state } = useLocation();
-    // const { isHost } = state;
-
     const navigate = useNavigate();
 
     // Update player high scores and get winning players
     useEffect(() => {
-        async function generateScoresList() {
+        if (lobby) {
             let scoresList = Object.entries(lobby.players).map(([playerUuid, playerData]) => (
                 {
                     uuid: playerUuid,
@@ -42,12 +38,12 @@ export default function GameSummary() {
             ));
             setScoresList(scoresList);
         }
-        generateScoresList();
     }, [lobby]);
 
     useEffect(() => {
         if (scoresList) {
             // Find the highest score value
+            // Reference: https://stackoverflow.com/questions/36941115/how-to-return-the-object-with-highest-value-from-an-array
             let highestScore = Math.max(...scoresList.map(p => p.score));
             let winners = scoresList
                 .filter(p => p.score == highestScore)
@@ -67,7 +63,7 @@ export default function GameSummary() {
             }
         }
         updateHighScores();
-    }, [scoresList]);
+    }, [scoresList, isHost]);
 
     const backClick = async () => {
         // Host deletes the lobby in the database
@@ -88,7 +84,7 @@ export default function GameSummary() {
                         {winningPlayers.sort(compareScores).map((username, index) => (
                             <div key={index} className="flex space-x-2 items-center">
                                 <EmojiEventsIcon sx={{ fontSize: 60 }}/>
-                                <Typography variant="h4"><b>{username}</b></Typography>
+                                <Typography variant="h4" className="text-center"><b>{username}</b></Typography>
                             </div>
                         ))}
                     </div>

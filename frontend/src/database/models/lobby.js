@@ -353,10 +353,6 @@ export async function updateHost(lobby, hostUuid) {
 }
 
 export async function deleteLobby(lobby) {
-  if (!(lobby instanceof Lobby)) {
-    throw new Error("lobby is not an instance of Lobby class");
-  }
-
   if (lobby.uuid == null) {
     throw new Error("missing lobby uuid");
   }

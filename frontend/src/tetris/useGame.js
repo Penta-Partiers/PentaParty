@@ -32,14 +32,19 @@ export function useGame() {
         setPlayerUuid(playerUuid);
     }
 
-    const resumeGame = (lobby, playerUuid, board, score) => {
+    const resumeGame = (lobby, playerUuid, board, score, status) => {
         console.log("game resumed!"); // Debug
-        setGameStatus(GAME_STATUS_ONGOING);
+        setGameStatus(status);
         setTickSpeed(1000);
-        dispatchBoardState({ type: 'resume', board: board });
         setScore(score);
         setLobby(lobby);
         setPlayerUuid(playerUuid);
+        if (status == GAME_STATUS_ONGOING) {
+            dispatchBoardState({ type: 'resume', board: board });
+        }
+        else {
+            dispatchBoardState({ type: 'ended', board: board });
+        }
     }
 
     // Continuously run the game loop (if it's been started)

@@ -127,7 +127,7 @@ export default function Lobby() {
         
         return () => unsubscribe();
         
-    }, [isHost]);
+    }, [isHost, userDb]);
 
     const handleInviteClick = async (friendUuid) => {
         await inviteFriendToLobby(friendUuid, lobby.code)
