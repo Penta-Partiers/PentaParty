@@ -52,7 +52,8 @@ export default function SpectatorView() {
 
             // Redirect to game summary page upon game end
             if (lobbyUpdate == null || lobbyUpdate.status == LOBBY_STATUS_END) {
-                navigate("/game-summary", { state: { isHost: isHost, lobby: lobbyUpdate, scoresList: players } });
+                localStorage.setItem("lobby", JSON.stringify(lobbyUpdate));
+                navigate("/game-summary", { state: { isHost: isHost } });
             }
 
             let playersData = Object.entries(lobbyUpdate.players).map(([playerUuid, playerData]) => (

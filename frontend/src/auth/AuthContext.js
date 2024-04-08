@@ -13,10 +13,11 @@ import { createContext, useState, useEffect } from 'react';
 
 // Firebase
 import { auth } from '../firebase';
-import { getUser } from "../database/models/user";
+import { User, getUser } from "../database/models/user";
 
 // Pages
 import Loading from '../pages/Loading';
+import { Lobby } from '../database/models/lobby';
 
 export const Context = createContext();
 
@@ -24,14 +25,28 @@ export function AuthContext({ children }) {
     const [user, setUser] = useState();
     const [userDb, setUserDb] = useState(() => {
         const u = sessionStorage.getItem("userDb");
-        return JSON.parse(u) || null;
+        // return JSON.parse(u) || null;
+        let parsed = JSON.parse(u);
+        if (parsed) {
+            return User.fromJson(parsed);;
+        }
+        else {
+            return null;
+        }
     });
     // Important for when a page is refreshed to make sure
     // that it's loaded first before rendering anything else.
     const [loading, setLoading] = useState(true);
     const [lobby, setLobby] = useState(() => {
         const l = localStorage.getItem("lobby");
-        return JSON.parse(l) || null;
+        // return JSON.parse(l) || null;
+        let parsed = JSON.parse(l);
+        if (parsed) {
+            return Lobby.fromJson(parsed);
+        }
+        else {
+            return null;
+        }
     });
 
     useEffect(() => {
