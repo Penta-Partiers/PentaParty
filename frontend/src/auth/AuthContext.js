@@ -22,11 +22,17 @@ export const Context = createContext();
 
 export function AuthContext({ children }) {
     const [user, setUser] = useState();
-    const [userDb, setUserDb] = useState();
+    const [userDb, setUserDb] = useState(() => {
+        const u = sessionStorage.getItem("userDb");
+        return JSON.parse(u) || null;
+    });
     // Important for when a page is refreshed to make sure
     // that it's loaded first before rendering anything else.
     const [loading, setLoading] = useState(true);
-    const [lobby, setLobby] = useState();
+    const [lobby, setLobby] = useState(() => {
+        const l = localStorage.getItem("lobby");
+        return JSON.parse(l) || null;
+    });
 
     useEffect(() => {
         // The onAuthStateChanged() function from Firebase returns an
@@ -39,12 +45,17 @@ export function AuthContext({ children }) {
             if (currentUser) {
                 setUser(currentUser);
                 await getUser(currentUser.uid)
-                    .then((userDb) => setUserDb(userDb))
+                    .then((userDb) => {
+                        setUserDb(userDb);
+                        localStorage.setItem("userDb", JSON.stringify(userDb));
+                    })
                     .catch((e) => console.log(e));
             }
             else {
                 setUser(null);
                 setUserDb(null);
+                localStorage.setItem("userDb", null);
+                localStorage.setItem("lobby", null);
             }
         });
         return () => {

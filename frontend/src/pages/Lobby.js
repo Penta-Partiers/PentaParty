@@ -107,6 +107,7 @@ export default function Lobby() {
         const unsubscribe = onSnapshot(doc(db, "lobby", lobby.uuid), (doc) => {
             let lobbyUpdate = LobbyDb.fromFirestore(doc);
             setLobby(lobbyUpdate);
+            localStorage.setItem("lobby", JSON.stringify(lobbyUpdate));
 
             // Once game has started, redirect players and spectators accordingly
             if (lobbyUpdate && lobbyUpdate.status == LOBBY_STATUS_ONGOING) {
@@ -148,6 +149,7 @@ export default function Lobby() {
             await deleteLobby(lobby)
                 .then(() => {
                     setLobby(null);
+                    localStorage.setItem("lobby", null);
                     navigate("/home");
                 })
                 .catch((e) => console.log(e));
@@ -156,6 +158,7 @@ export default function Lobby() {
             await leaveLobby(lobby, userDb.uuid)
                 .then(() => {
                     setLobby(null);
+                    localStorage.setItem("lobby", null);
                     navigate("/home");
                 })
                 .catch((e) => console.log(e));

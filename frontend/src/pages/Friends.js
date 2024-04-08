@@ -37,6 +37,7 @@ export default function Friends() {
         const unsubscribe = onSnapshot(doc(db, "user", userDb.uuid), async (doc) => {
             let userUpdate = User.fromFirestore(doc);
             setUserDb(userUpdate);
+            localStorage.setItem("userDb", JSON.stringify(userDb));
 
             // Reference for using async await with array map:
             // https://stackoverflow.com/questions/40140149/use-async-await-with-array-map
