@@ -23,7 +23,7 @@ import VideogameAssetOutlinedIcon from '@mui/icons-material/VideogameAssetOutlin
 import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline';
 
 export default function Home() {
-    const {userDb, setLobby} = useContext(Context);
+    const {userDb, setLobby, setIsHost} = useContext(Context);
 
     const navigate = useNavigate();
 
@@ -47,9 +47,11 @@ export default function Home() {
                 await createLobby(lobby)
                     .then(async () => {
                         setLobby(lobby);
+                        setIsHost(true);
                         localStorage.setItem("lobby", JSON.stringify(lobby));
+                        localStorage.setItem("isHost", "true");
                         await joinSpectators(lobby, userDb.uuid, userDb.username);
-                        navigate("/lobby/" + lobbyCode, { state: { isHost: true } });
+                        navigate("/lobby/" + lobbyCode);
                     })
                     .catch((e) => console.log(e));
             },

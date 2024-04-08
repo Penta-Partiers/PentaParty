@@ -19,7 +19,7 @@ import { User } from '../database/models/user';
 const LOBBY_LIMIT = 24;
 
 export default function JoinLobby() {
-    const {userDb, setUserDb, setLobby} = useContext(Context);
+    const {userDb, setUserDb, setLobby, setIsHost} = useContext(Context);
 
     const [lobbyCode, setLobbyCode] = useState("");
     const [displayError, setDisplayError] = useState(false);
@@ -65,10 +65,12 @@ export default function JoinLobby() {
                             }
                         }
                         setLobby(lobby);
+                        setIsHost(false);
                         localStorage.setItem("lobby", JSON.stringify(lobby));
+                        localStorage.setItem("isHost", "false");
                         await removeLobbyInvite(userDb, lobbyCode);
                         await joinSpectators(lobby, userDb.uuid, userDb.username);
-                        navigate("/lobby/" + lobbyCode.toUpperCase(), { state: { isHost: false } });
+                        navigate("/lobby/" + lobbyCode.toUpperCase());
                     }
                     else {
                         setDisplayError(true);

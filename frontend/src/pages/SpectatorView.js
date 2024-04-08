@@ -25,10 +25,10 @@ import { Lobby as LobbyDb, LOBBY_STATUS_END, LOBBY_PLAYER_STATUS_NOT_STARTED,
 import { useNavigate, useLocation } from 'react-router-dom';
 
 export default function SpectatorView() {
-    const { lobby } = useContext(Context);
+    const { lobby, isHost } = useContext(Context);
     const navigate = useNavigate();
-    const {state} = useLocation();
-    const { isHost } = state;
+    // const {state} = useLocation();
+    // const { isHost } = state;
 
     const [board, setBoard] = useState(() => {
         var board = new Array(25);
@@ -53,7 +53,7 @@ export default function SpectatorView() {
             // Redirect to game summary page upon game end
             if (lobbyUpdate == null || lobbyUpdate.status == LOBBY_STATUS_END) {
                 localStorage.setItem("lobby", JSON.stringify(lobbyUpdate));
-                navigate("/game-summary", { state: { isHost: isHost } });
+                navigate("/game-summary");
             }
 
             let playersData = Object.entries(lobbyUpdate.players).map(([playerUuid, playerData]) => (
@@ -67,7 +67,7 @@ export default function SpectatorView() {
             setPlayers(playersData);
             
             // End the game if all players are done
-            if (isHost && await isGameFinished(lobbyUpdate)) {
+            if (isHost == "true" && await isGameFinished(lobbyUpdate)) {
                 await endGameForLobby(lobbyUpdate);
             }
 

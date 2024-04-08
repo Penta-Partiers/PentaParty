@@ -19,14 +19,14 @@ import { Context } from "../auth/AuthContext";
 import { compareScores } from "../util/util";
 
 export default function GameSummary() {
-    const { lobby } = useContext(Context);
+    const { lobby, isHost } = useContext(Context);
 
     const [scoresList, setScoresList] = useState(null);
     const [winningPlayers, setWinningPlayers] = useState(null);
 
     // Get host flag from routing state
-    const { state } = useLocation();
-    const { isHost } = state;
+    // const { state } = useLocation();
+    // const { isHost } = state;
 
     const navigate = useNavigate();
 
@@ -43,7 +43,7 @@ export default function GameSummary() {
             setScoresList(scoresList);
         }
         generateScoresList();
-    }, []);
+    }, [lobby]);
 
     useEffect(() => {
         if (scoresList) {
@@ -83,7 +83,7 @@ export default function GameSummary() {
 
     const backClick = async () => {
         // Host deletes the lobby in the database
-        if (isHost) {
+        if (isHost == "true") {
             await deleteLobby(lobby);
         }
         localStorage.setItem("lobby", null);
