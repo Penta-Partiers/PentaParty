@@ -21,6 +21,11 @@ import { Lobby } from '../database/models/lobby';
 
 export const Context = createContext();
 
+/**
+ * Use React Context to keep track of global state variables
+ * 
+ * ==> Functional Requirements: FR1, FR2, FR7, FR8, FR22
+ */
 export function AuthContext({ children }) {
     const [user, setUser] = useState();
     const [userDb, setUserDb] = useState(() => {
@@ -57,6 +62,8 @@ export function AuthContext({ children }) {
         // unsubscribe function that stops monitoring the auth state
         // once the user has logged in.
         // Reference: https://blog.stackademic.com/concept-clear-of-onauthstatechanged-e8dddd4ff5c8
+        //
+        // ==> Functional Requirement: 
         const unsubscribe = auth.onAuthStateChanged(async currentUser => {
             setLoading(false);
 
@@ -82,10 +89,14 @@ export function AuthContext({ children }) {
         }
     }, [])
 
+    // Saves any changes to user data to localstorage to persist between refreshes
+    // ==> Functional Requirements: FR1, FR2
     useEffect(() => {
         localStorage.setItem("userDb", JSON.stringify(userDb));
     }, [userDb]);
 
+    // Saves any changes to lobby data to localstorage to persist between refreshes
+    // ==> Functional Requirements: FR8, FR22
     useEffect(() => {
         localStorage.setItem("lobby", JSON.stringify(lobby));
     }, [lobby]);
@@ -105,6 +116,7 @@ export function AuthContext({ children }) {
     
     // Only display the children content once the authentication is done loading,
     // otherwise display a loading screen
+    // ==> FR1, FR2
     return <Context.Provider value={values}>
        {loading ? <Loading /> : children}
     </Context.Provider>
