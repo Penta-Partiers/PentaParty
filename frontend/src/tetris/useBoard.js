@@ -136,6 +136,7 @@ export function boardStateReducer(state, action) {
             break;
         case 'ended':
             newState.board = convertAllToStatic(action.board);
+            break;
         default:
             // Debugging - this shouldn't ever happen
             console.error("boardStateReducer error -> invalid action type");
