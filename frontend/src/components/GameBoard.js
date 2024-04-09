@@ -1,3 +1,8 @@
+/** 
+ * Renders an individual cell within the game board.
+ * 
+ * ==> Functional Requirement: FR13
+*/
 function Cell({ cellValue, shapeColor }) {
     switch(cellValue) {
         case 0: // Empty cell
@@ -33,6 +38,11 @@ function Cell({ cellValue, shapeColor }) {
     }
 }
 
+/** 
+ * Renders the game board.
+ * 
+ * ==> Functional Requirement: FR13
+*/
 export default function GameBoard({ boardState, currentColor }) {
     return (
         <div className="border-2 border-solid border-slate-500 w-fit">

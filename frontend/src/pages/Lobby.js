@@ -5,36 +5,45 @@ import { useState, useContext, useEffect } from 'react';
 import { doc, onSnapshot } from "firebase/firestore";
 import { Lobby as LobbyDb, deleteLobby, inviteFriendToLobby, 
         joinPlayers, joinSpectators, leaveLobby, startGameForLobby,
-        LOBBY_STATUS_OPEN, LOBBY_STATUS_FULL,
-        LOBBY_STATUS_ONGOING, LOBBY_STATUS_END } from '../database/models/lobby';
-import { User, getUser } from '../database/models/user.js';
+        LOBBY_STATUS_ONGOING } from '../database/models/lobby';
+import { getUser } from '../database/models/user.js';
 import { db } from "../firebase.js";
 
 // User Context
 import { Context } from "../auth/AuthContext";
 
 // Routing
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 // Material UI
-import { Grid, Button, Paper, Typography, Modal, Alert, CircularProgress } from '@mui/material';
+import { Grid, Button, Paper, Typography, Modal, Alert, CircularProgress, Box, LinearProgress } from '@mui/material';
 
 const MAX_PLAYERS = 4;
 
+/**
+ * This component renders the popup modal for sending lobby invites to friends.
+ * 
+ * ==> Functional Requirement: FR9
+ */
 function InviteFriendsModal({ isOpen, onClose, friendsRenderList, onInvite }) {
     const [displaySuccessAlert, setDisplaySuccessAlert] = useState(false);
 
+    // Invite a friend to the lobby via their uuid
+    // ==> Functional Requirement: FR9
     async function handleInviteClick(friendUuid) {
         setDisplaySuccessAlert(false);
         await onInvite(friendUuid);
         setDisplaySuccessAlert(true);
     }
 
+    // Close the modal
     function handleClose() {
         setDisplaySuccessAlert(false);
         onClose();
     }
 
+    // Render the modal and the friends list inside of it
+    // ==> Functional Requirement: FR9
     return (
         <Modal
             open={isOpen}
@@ -71,83 +80,119 @@ function InviteFriendsModal({ isOpen, onClose, friendsRenderList, onInvite }) {
     )
 }
 
+/**
+ * This component renders the lobby page, where users can:
+ *  - become a player,
+ *  - become a spectator,
+ *  - invite friends to the lobby,
+ *  - or start the game.
+ * 
+ * ==> Functional Requirements: FR9, FR11, FR12
+ */
 export default function Lobby() {
-    const {userDb, lobby, setLobby} = useContext(Context);
+    const {userDb, lobby, isHost, setLobby} = useContext(Context);
 
-    const {state} = useLocation();
     const navigate = useNavigate();
 
-    const [isHost, setIsHost] = useState(state.isHost)
     const [modalOpen, setModalOpen] = useState(false);
     const [displayError, setDisplayError] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
     const [friendsRenderList, setFriendsRenderList] = useState(null);
+    const [loading, setLoading] = useState(false);
 
     // Initialize friends list information for invites
+    // ==> Functional Requirement: FR9
     const initFriendsRenderList = async () => {
-        // Reference for using async await with array map:
-        // https://stackoverflow.com/questions/40140149/use-async-await-with-array-map
-        let list = await Promise.all(userDb.friends.map(async (friendUuid) => {
-            return await getUser(friendUuid)
-                .then((friend) => ({ uuid: friend.uuid, username: friend.username }))
-                .catch((error) => console.log(error));
-        }));
-        setFriendsRenderList(list);
+        if (userDb) {
+            // Reference for using async await with array map:
+            // https://stackoverflow.com/questions/40140149/use-async-await-with-array-map
+            let list = await Promise.all(userDb.friends.map(async (friendUuid) => {
+                return await getUser(friendUuid)
+                    .then((friend) => ({ uuid: friend.uuid, username: friend.username }))
+                    .catch((error) => console.log(error));
+            }));
+            setFriendsRenderList(list);
+        }
     }
 
+    // Initialize the friends list for invitations once user data has been loaded
+    //
     // Reference for async state setting with useEffect:
     // https://stackoverflow.com/questions/71769990/react-18-destroy-is-not-a-function
+    //
+    // ==> Functional Requirement: FR9
     useEffect(() => {
         initFriendsRenderList();
-    }, [])
+    }, [userDb])
 
     // Listen to real-time updates from the lobby
     // Reference: https://stackoverflow.com/questions/59944658/which-react-hook-to-use-with-firestore-onsnapshot
+    // ==> Functional Requirements: FR9, FR11, FR12
     useEffect(() => {
         const unsubscribe = onSnapshot(doc(db, "lobby", lobby.uuid), (doc) => {
             let lobbyUpdate = LobbyDb.fromFirestore(doc);
             setLobby(lobbyUpdate);
+            localStorage.setItem("lobby", JSON.stringify(lobbyUpdate));
 
             // Once game has started, redirect players and spectators accordingly
+            // ==> Functional Requirement: FR12
             if (lobbyUpdate && lobbyUpdate.status == LOBBY_STATUS_ONGOING) {
                 console.log("game started!");
                 if (Object.keys(lobbyUpdate.players).find(playerUuid => playerUuid == userDb.uuid)) {
+                    setLobby(lobbyUpdate);
                     navigate("/player", { state: { isHost: isHost } });
                 }
                 else {
+                    setLobby(lobbyUpdate);
                     navigate("/spectator", { state: { isHost: isHost } });
                 }
-            }
+            }  
         });
-        return () => unsubscribe();
-    }, []);
+        return () => unsubscribe();  
+    }, [isHost, userDb]);
 
+    // Invite a friend to the lobby
+    // ==> Functional Requirement: FR9
     const handleInviteClick = async (friendUuid) => {
         await inviteFriendToLobby(friendUuid, lobby.code)
             .catch((error) => console.log(error));
     }
 
+    // Join the players side
+    // ==> Functional Requirement: FR11
     async function handleJoinPlayersClick() {
+        setLoading(true);
         if (lobby.players.length >= MAX_PLAYERS) {
             console.log("Max number of players reached, cannot join.");
             setDisplayError(true);
             setErrorMessage("Max number of players reached!");
+            setLoading(false);
             return;
         }
         else {
             await joinPlayers(lobby, userDb.uuid, userDb.username);
+            setLoading(false);
         }
     }
 
+    // Join the spectators side
+    // ==> Functional Requirement: FR11
     async function handleJoinSpectatorsClick() {
+        setLoading(true);
         await joinSpectators(lobby, userDb.uuid, userDb.username);
+        setLoading(false);
     }
 
+    // Leave the lobby
+    // ==> Functional Requirement: FR8
     async function handleLeaveClick() {
-        if (isHost) {
+        setLoading(true);
+        if (isHost == "true") {
             await deleteLobby(lobby)
                 .then(() => {
                     setLobby(null);
+                    localStorage.setItem("lobby", null);
+                    localStorage.setItem("isHost", "false");
                     navigate("/home");
                 })
                 .catch((e) => console.log(e));
@@ -156,13 +201,18 @@ export default function Lobby() {
             await leaveLobby(lobby, userDb.uuid)
                 .then(() => {
                     setLobby(null);
+                    localStorage.setItem("lobby", null);
+                    localStorage.setItem("isHost", "false");
                     navigate("/home");
                 })
                 .catch((e) => console.log(e));
         }
     }
 
+    // Start the game
+    // Functional Requirement: FR12
     async function handleStartGameClick() {
+        setLoading(true);
         let playerCount = Object.keys(lobby.players).length;
         let spectatorCount = Object.keys(lobby.spectators).length
         if (playerCount > 0 && playerCount <= 4 && spectatorCount >= 1) {
@@ -171,76 +221,86 @@ export default function Lobby() {
         else {
             setDisplayError(true);
             setErrorMessage("Invalid lobby arrangement!");
+            setLoading(false);
         }
     }
 
+    // Render the lobby page
+    // ==> Functional Requirements: FR9, FR11, FR12
     return (
-        <Grid
-            container
-            alignItems="center"
-            justifyContent="center"
-            sx={{ minHeight: '100vh' }}
-        >
-            <Grid item xs={7}>
-                <div className='flex flex-col items-center w-full p-2 space-y-8'>
-                    {displayError &&
-                        <Alert severity="error" onClose={() => setDisplayError(false)}>
-                            {errorMessage}
-                        </Alert>
-                    }
+        <div className="h-screen overflow-hidden">
+            { loading && (
+                <Box sx={{ width: '100%' }}>
+                    <LinearProgress />
+                </Box>
+            )}
+            <Grid
+                container
+                alignItems="center"
+                justifyContent="center"
+                sx={{ minHeight: '100vh' }}
+            >
+                <Grid item xs={7}>
+                    <div className='flex flex-col items-center w-full p-2 space-y-8'>
+                        {displayError &&
+                            <Alert severity="error" onClose={() => setDisplayError(false)}>
+                                {errorMessage}
+                            </Alert>
+                        }
 
-                    <Typography variant='h4'><b>Room Code:</b> {lobby ? lobby.code : <></>}</Typography>
+                        <Typography variant='h4'><b>Room Code:</b> {lobby ? lobby.code : <></>}</Typography>
 
-                    <InviteFriendsModal 
-                        isOpen={modalOpen} 
-                        onClose={() => setModalOpen(false)} 
-                        friendsRenderList={friendsRenderList} 
-                        onInvite={handleInviteClick} />
+                        <InviteFriendsModal 
+                            isOpen={modalOpen} 
+                            onClose={() => setModalOpen(false)} 
+                            friendsRenderList={friendsRenderList} 
+                            onInvite={handleInviteClick} />
 
-                    <div className='flex justify-center w-full space-x-4'>
-                        <div className='flex flex-col items-center w-1/2 space-y-2 p-2'>
-                            <Typography variant="h5"><b>Players</b></Typography>
-                            <div className='flex flex-col items-center h-80 w-full bg-slate-300 overflow-auto p-2 space-y-2 border border-slate-300'>
-                                {lobby && Object.entries(lobby.players).map(([playerId, playerData]) => (
-                                    <Paper elevation={2} key={playerId} sx={{ minHeight: "50px", width: "100%" }}>
-                                        <div className='flex items-center justify-center h-full'>
-                                            <Typography variant="h6">{playerData.username}</Typography>
-                                        </div>
-                                    </Paper>
-                                ))}
+                        <div className='flex justify-center w-full space-x-4'>
+                            <div className='flex flex-col items-center w-1/2 space-y-2 p-2'>
+                                <Typography variant="h5"><b>Players</b></Typography>
+                                <div className='flex flex-col items-center h-80 w-full bg-slate-300 overflow-auto p-2 space-y-2 border border-slate-300'>
+                                    {lobby && Object.entries(lobby.players).map(([playerId, playerData]) => (
+                                        <Paper elevation={2} key={playerId} sx={{ minHeight: "50px", width: "100%" }}>
+                                            <div className='flex items-center justify-center h-full'>
+                                                <Typography variant="h6">{playerData.username}</Typography>
+                                            </div>
+                                        </Paper>
+                                    ))}
+                                </div>
+                                <Button variant="contained" onClick={handleJoinPlayersClick}>Join Players</Button>
                             </div>
-                            <Button variant="contained" onClick={handleJoinPlayersClick}>Join Players</Button>
+                            <div className='flex flex-col items-center w-1/2 space-y-2 p-2'>
+                                <Typography variant="h5"><b>Spectators</b></Typography>
+                                <div className='flex flex-col items-center h-80 w-full bg-slate-300 overflow-auto p-2 space-y-2 border border-slate-300'>
+                                    {lobby && Object.entries(lobby.spectators).map(([spectatorId, spectatorData]) => (
+                                        <Paper elevation={2} key={spectatorId} sx={{ minHeight: "50px", width: "100%" }}>
+                                            <div className='flex items-center justify-center h-full'>
+                                                <Typography variant="h6">{spectatorData.username}</Typography>
+                                            </div>
+                                        </Paper>
+                                    ))}
+                                </div>
+                                <Button variant="contained" onClick={handleJoinSpectatorsClick}>Join Spectators</Button>
+                            </div>
                         </div>
-                        <div className='flex flex-col items-center w-1/2 space-y-2 p-2'>
-                            <Typography variant="h5"><b>Spectators</b></Typography>
-                            <div className='flex flex-col items-center h-80 w-full bg-slate-300 overflow-auto p-2 space-y-2 border border-slate-300'>
-                                {lobby && Object.entries(lobby.spectators).map(([spectatorId, spectatorData]) => (
-                                    <Paper elevation={2} key={spectatorId} sx={{ minHeight: "50px", width: "100%" }}>
-                                        <div className='flex items-center justify-center h-full'>
-                                            <Typography variant="h6">{spectatorData.username}</Typography>
-                                        </div>
-                                    </Paper>
-                                ))}
+
+                        <div className='flex items-center justify-between w-full'>
+                            <div className="w-[100px]">
+                                <Button variant="outlined" fullWidth={true} onClick={() => setModalOpen(true)}>Invite</Button>
                             </div>
-                            <Button variant="contained" onClick={handleJoinSpectatorsClick}>Join Spectators</Button>
+                            <div className="w-[100px]">
+                                {(isHost === "true") && 
+                                    <Button variant="contained" size="large" fullWidth={true} onClick={handleStartGameClick}>Start</Button>
+                                }
+                            </div>
+                            <div className="w-[100px]">
+                                <Button variant="outlined" fullWidth={true} onClick={handleLeaveClick}>Leave</Button>
+                            </div>
                         </div>
                     </div>
-
-                    <div className='flex items-center justify-between w-full'>
-                        <div className="w-[100px]">
-                            <Button variant="outlined" fullWidth={true} onClick={() => setModalOpen(true)}>Invite</Button>
-                        </div>
-                        <div className="w-[100px]">
-                            {isHost && 
-                                <Button variant="contained" size="large" fullWidth={true} onClick={handleStartGameClick}>Start</Button>
-                            }
-                        </div>
-                        <div className="w-[100px]">
-                            <Button variant="outlined" fullWidth={true} onClick={handleLeaveClick}>Leave</Button>
-                        </div>
-                    </div>
-                </div>
+                </Grid>
             </Grid>
-        </Grid>
+        </div>
     )
 }

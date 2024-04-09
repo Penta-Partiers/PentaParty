@@ -70,11 +70,11 @@ export class PlayerHelper {
 
 export class Lobby {
   constructor(code, hostUuid, uuid, playerBoards, playerPendingRows, playerPendingShapes, playerPendingShapesSize, players, spectators, status) {
-    if (typeof code !== "string" && code.length != LOBBY_CODE_LENGTH) {
+    if (code && typeof code !== "string" && code.length != LOBBY_CODE_LENGTH) {
       throw new Error("invalid lobby code");
     }
 
-    if (typeof hostUuid !== "string") {
+    if (hostUuid && typeof hostUuid !== "string") {
       throw new Error("invalid hostUuid type");
     }
 
@@ -261,6 +261,10 @@ export class Lobby {
     }
     return null;
   }
+
+  static fromJson(json) {
+    return Object.assign(new Lobby, json);
+  }
 }
 
 // Lobby actions
@@ -349,10 +353,6 @@ export async function updateHost(lobby, hostUuid) {
 }
 
 export async function deleteLobby(lobby) {
-  if (!(lobby instanceof Lobby)) {
-    throw new Error("lobby is not an instance of Lobby class");
-  }
-
   if (lobby.uuid == null) {
     throw new Error("missing lobby uuid");
   }

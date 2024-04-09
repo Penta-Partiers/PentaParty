@@ -3,20 +3,21 @@ import { useReducer } from 'react';
 export const NUM_ROWS = 25;
 export const NUM_COLS = 13;
 
-/*
-Custom React hook to handle all changes to the board state, specifically:
-    - The board itself (array of array of numbers)
-    - The current shape, represented as an array of tuples
-    - The current shape queue, represented as an array of shape-point representations
-*/
+/**
+ * Custom React hook to handle all changes to the board state
+ * 
+ * ==> Functional Requirements: FR13, FR14, FR15, FR16, FR17, FR18, FR19, FR20, FR25, FR27
+ */
 export function useBoard() {
     /*
-    Board state has the following properties:
-    {
-        board: array of array of numbers representing the board
-        currentShapePoints: array of tuples that dictate the x and y position of each point making up the shape
-        shapeQueue: array of shape-point representations (i.e. similar to currentShapePoints)
-    }
+    Keeps track of the following properties and any changes/updates to them:
+      - board: array of array of numbers representing the board
+      - currentShapePoints: array of tuples that dictate the x and y position of each point making up the shape
+      - shapeQueue: array of shape-point representations (i.e. similar to currentShapePoints)
+      - currentColor: string representing the current color of the current shape
+      - pushedIncompleteRows: a boolean keeping track of whether or not incomplete rows were recently added to the board
+    
+    ==> Functional Requirements: FR13, FR14, FR15, FR16, FR17, FR18, FR19, FR20, FR25, FR27
     */
     const [boardState, dispatchBoardState] = useReducer(
         // Reducer function
@@ -26,7 +27,7 @@ export function useBoard() {
             board: initializeEmptyBoard(),
             currentShapePoints: null,
             shapeQueue: [],
-            currentColor: "red",
+            currentColor: selectNextColor(),
             pushedIncompleteRows: false,
         }
     );
@@ -38,17 +39,7 @@ export function useBoard() {
 Returns a new state given an action, which contains a 'type', and in some
 cases, some additional parameters.
 
-action.type can either be:
-    - 'start'
-    - 'lower'
-    - 'translate'
-        - includes action.direction
-    - 'rotate'
-        - includes action.direction
-    - 'removeRow'
-        - includes action.row
-    - 'lowerRows'
-        - includes action.rows
+==> Functional Requirements: FR13, FR14, FR15, FR16, FR17, FR18, FR19, FR20, FR25, FR27
 */
 export function boardStateReducer(state, action) {
     // Create a deep clone so that React can detect this as a new state
@@ -56,6 +47,7 @@ export function boardStateReducer(state, action) {
 
     switch (action.type) {
         // Called once when the game is started, initializes the state
+        // ==> Functional Requirement: FR13
         case 'start':
             let initialBoard = initializeEmptyBoard();
             let initialShapePoints = generateTetromino();
@@ -70,6 +62,9 @@ export function boardStateReducer(state, action) {
                 currentColor: selectNextColor(),
                 pushedIncompleteRows: false,
             }
+        // Moves a shape down the board, and turns it into a static shape if it touches
+        // the bottom of the screen or the top of another shape
+        // ==> Functional Requirements: FR14, FR18
         case 'lower':
             if (!newState.pushedIncompleteRows) {
                 if (lowerShape(newState.board, newState.currentShapePoints)) {
@@ -85,6 +80,8 @@ export function boardStateReducer(state, action) {
                 newState.pushedIncompleteRows = false;
             }
             break;
+        // Moves the current shape left or right on the board
+        // ==> Functional Requirement: FR16
         case 'translate':
             if (!newState.pushedIncompleteRows) {
                 if (translateShape(newState.board, newState.currentShapePoints, action.direction)) {
@@ -98,6 +95,8 @@ export function boardStateReducer(state, action) {
                 newState.pushedIncompleteRows = false;
             }
             break;
+        // Rotates the current shape clockwise or counterclockwise
+        // ==> Functional Requirement: FR17
         case 'rotate':
             if (!newState.pushedIncompleteRows) {
                 rotateShape(newState.board, newState.currentShapePoints, action.direction);
@@ -106,6 +105,8 @@ export function boardStateReducer(state, action) {
                 newState.pushedIncompleteRows = false;
             }
             break;
+        // Removes a completed row of static blocks
+        // ==> Functional Requirement: FR19
         case 'removeRow':
             if (!newState.pushedIncompleteRows) {
                 removeRow(newState.board, action.row);
@@ -114,6 +115,8 @@ export function boardStateReducer(state, action) {
                 newState.pushedIncompleteRows = false;
             }
             break;
+        // Moves the remaining rows down after rows have been completed
+        // ==> Functional Requirement: FR20
         case 'lowerRows':
             if (!newState.pushedIncompleteRows) {
                 lowerRows(newState.board, action.rows);
@@ -122,13 +125,30 @@ export function boardStateReducer(state, action) {
                 newState.pushedIncompleteRows = false;
             }
             break;
+        // Adds a spectator-created shape the the player's shape queue
+        // ==> Functional Requirement: FR25
         case 'pushSpectatorShape':
             let widgetShapePoints = convertToShape(action.widget);
             newState.shapeQueue.push(widgetShapePoints);
             break;
+        // Adds incomplete rows of static blocks to a player's board
+        // ==> Functional Requirement: FR27
         case 'addIncompleteRows':
             addIncompleteRows(newState.board, action.rowCount, newState.currentShapePoints);
             newState.pushedIncompleteRows = true;
+            break;
+        // Resumes a player's game if they reconnect after being disconnected
+        // ==> Functional Requirement: FR14
+        case 'resume':
+            newState.board = action.board;
+            newState.currentShapePoints = getCurrentShapePoints(action.board);
+            break;
+        // Re-renders the players board state if they reconnect after being disconnected and
+        // their game has already ended
+        // ==> Functional Requirement: FR13
+        case 'ended':
+            newState.board = action.board;
+            convertAllToStatic(newState.board);
             break;
         default:
             // Debugging - this shouldn't ever happen
@@ -139,10 +159,9 @@ export function boardStateReducer(state, action) {
 }
 
 /**
- * This function adds incomplete rows to the bottom of the tetris board
- * @param {array[array[number]]} board An array of arrays representing the Tetris board
- * @param {number} rowCount The number of incomplete rows to be added
- * @param {array[array[number]]} points The point representation of the current shape
+ * Adds incomplete rows to the bottom of the tetris board
+ * 
+ * ==> Functional Requirement: FR27
  */
 export function addIncompleteRows(board, rowCount, points) {
     // Remove existing shape and shift all of the points upwards by the number of incomplete rows or until it hits the top
@@ -198,6 +217,11 @@ export function addIncompleteRows(board, rowCount, points) {
     }
 }
 
+/**
+ * Causes static blocks to fall down after rows have been removed
+ * 
+ * ==> Functional Requirement: FR20
+ */
 export function lowerRows(board, rows) {
     // rows array must be in descending order (from the bottom of the board to the top, with the value decreasing because row 0 is on the top)
     rows.sort()
@@ -213,10 +237,20 @@ export function lowerRows(board, rows) {
     }
 }
 
+/**
+ * Removes a completed row of static blocks
+ * 
+ * ==> Functional Requirement: FR19
+ */
 export function removeRow(board, row) {
     board[row].fill(0)
 }
 
+/**
+ * Gets the next shape to fall on the player board
+ * 
+ * ==> Functional Requirement: FR13, FR14
+ */
 export function getNextShape(shapeQueue) {
     if (shapeQueue.length === 0) {
         return generateTetromino()
@@ -225,6 +259,11 @@ export function getNextShape(shapeQueue) {
     }
 }
 
+/**
+ * Renders a shape on the board
+ * 
+ * ==> Functional Requirement: FR13, FR14
+ */
 export function renderNewShape(board, points) {
     for (let i = 0; i < points.length; i++) {
         let rowNumber = points[i][0];
@@ -233,6 +272,11 @@ export function renderNewShape(board, points) {
     }
 }
 
+/**
+ * Moves a shape left or right on the board
+ * 
+ * ==> Functional Requirement: FR16
+ */
 export function translateShape(board, points, direction) {
     // If the shape is being shifted downwards
     if (direction === 0) {
@@ -276,6 +320,11 @@ export function translateShape(board, points, direction) {
     return false
 }
 
+/**
+ * Rotates a shape on the board
+ * 
+ * ==> Functional Requirement: FR17
+ */
 export function rotateShape(board, points, direction) {
     // Quick error check to verify values
     if (direction !== -1 && direction !== 1) {
@@ -366,6 +415,11 @@ export function rotateShape(board, points, direction) {
     }
 }
 
+/**
+ * Moves a shape downward on the board
+ * 
+ * ==> Functional Requirement: FR14
+ */
 export function lowerShape(board, points) {
     // Check if there's room beneath the shape
     for (let p = 0; p < points.length; p++) {
@@ -399,6 +453,11 @@ export function lowerShape(board, points) {
     return false;
 }
 
+/**
+ * Turns a shape into static blocks
+ * 
+ * ==> Functional Requirement: FR18
+ */
 export function freeze(board, points) {
     for (let p = 0; p < points.length; p++) {
         let rowNumber = points[p][0]
@@ -409,7 +468,11 @@ export function freeze(board, points) {
     return;
 }
 
-// returns a shape-points representation
+/**
+ * Returns one of the default Tetris shapes
+ * 
+ * ==> Functional Requirement: FR15
+ */
 export function generateTetromino() {
     // There are 5 possible tetrominos
     var shapeChoice = Math.floor(Math.random() * 5);
@@ -442,7 +505,11 @@ export function generateTetromino() {
     }
 }
 
-// Initialize an empty board with each cell set to 0
+/**
+ * Initialize an empty board with each cell set to 0
+ * 
+ * ==> Functional Requirement: FR13
+ */
 export function initializeEmptyBoard() {
     var board = new Array(NUM_ROWS);
     for (let i = 0; i < board.length; i++) {
@@ -451,7 +518,12 @@ export function initializeEmptyBoard() {
     return board;
 }
 
-// Possible colors: red, cyan, blue, green, purple, orange
+/**
+ * Randomly selects the color of the current shape.
+ * Possible colors: red, cyan, blue, green, purple, orange
+ * 
+ * ==> Functional Requirement: FR14
+ */
 export function selectNextColor() {
     var colorChoice = Math.floor(Math.random() * 6);
 
@@ -471,6 +543,12 @@ export function selectNextColor() {
     }
 }
 
+/**
+ * Checks if the game has ended based on the board state,
+ * i.e. if there are any static blocks past the threshold height (top 3 rows)
+ * 
+ * ==> Functional Requirement: FR21
+ */
 export function checkEndGame(board) {
     // Check all of the spaces in the top three rows (to allow room for shapes to spawn)
     for (let j = 0; j < board[0].length; j++) {
@@ -482,10 +560,10 @@ export function checkEndGame(board) {
 }
 
 /**
- * Takes in a widget state and converts it to points on the board. This function assumes that it is a valid shape (contiguous and 5 or less blocks used)
+ * Takes in a widget state and converts it to points on the board. 
+ * This function assumes that it is a valid shape (contiguous and 5 or less blocks used)
  * 
- * @param {[[number]]} widget The state of the spectator widget
- * @returns {array[array[number, number]]} An array of tuples that dictate the x and y position of each point making up the shape
+ * ==> Functional Requirement: FR24, FR25
  */
 export function convertToShape(widget) {
     var shape = new Array();
@@ -556,4 +634,42 @@ export function convertToShape(widget) {
     }
     
     return shape
+}
+
+/**
+ * Gets the coordinates of the current shape on the board
+ * 
+ * ==> Functional Requirement: FR14
+ */
+export function getCurrentShapePoints(board) {
+    let points = [];
+    for (let i = 0; i < board.length; i++) {
+        for (let j = 0; j < board[0].length; j++) {
+            if (board[i][j] == 2) {
+                points.push([i, j]);
+            }
+        }
+    }
+
+    if (points.length > 0) {
+        return points;
+    }
+    else {
+        return generateTetromino();
+    }
+}
+
+/**
+ * Converts all shapes to static blocks
+ * 
+ * Functional Requirement: FR18
+ */
+export function convertAllToStatic(board) {
+    for (let i = 0; i < board.length; i++) {
+        for (let j = 0; j < board[0].length; j++) {
+            if (board[i][j] == 2) {
+                board[i][j] = 1;
+            }
+        }
+    }
 }

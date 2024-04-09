@@ -1,7 +1,13 @@
 import { useEffect, useRef } from 'react';
 
-// Referenced the following for how to set intervals in React:
-// https://itnext.io/how-to-work-with-intervals-in-react-hooks-f29892d650f2
+/**
+ * Custom React hook for making the game loop occur in fixed intervals
+ * 
+ * Referenced the following for how to set intervals in React:
+ *  - https://itnext.io/how-to-work-with-intervals-in-react-hooks-f29892d650f2
+ * 
+ * ==> Functional Requirement: FR14
+ */
 export function useInterval(callback, delay) {
     const callbackRef = useRef();
 

@@ -19,6 +19,11 @@ import { Grid, Typography, Box, TextField, Button } from '@mui/material';
 // Utilities
 import { validateEmail, validatePassword } from '../util/util';
 
+/**
+ * This component renders the sign up page where users can create an account.
+ * 
+ * ==> Functional Requirement: FR1
+ */
 export default function SignUp() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -30,6 +35,8 @@ export default function SignUp() {
     const { setUser, setUserDb } = useContext(Context);
     const navigate = useNavigate();
 
+    // Create a new user account
+    // ==> Functional Requirement: FR1
     async function handleSignUpClick(e) {
         e.preventDefault()
 
@@ -60,6 +67,7 @@ export default function SignUp() {
     }
 
     // Update the email, username, and password while the user is typing
+    // ==> Functional Requirement: FR1
     function handleEmailChange(event) {
         setEmail(event.target.value);
     }
@@ -70,6 +78,8 @@ export default function SignUp() {
         setPassword(event.target.value);
     }
 
+    // Renders the sign up page
+    // ==> Functional Requirement: FR1
     return (
         <Grid
             container

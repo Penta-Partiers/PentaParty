@@ -16,15 +16,15 @@ import { validateEmail } from "../../util/util.js";
 
 export class User {
   constructor(uuid, email, username, friends, pendingFriends, highScore, lobbyInvites) {
-    if (!validateEmail(email)) {
+    if (email && !validateEmail(email)) {
       throw new Error("invalid email address");
     }
 
-    if (typeof uuid !== "string") {
+    if (uuid && typeof uuid !== "string") {
       throw new Error("invalid uuid type");
     }
 
-    if (typeof username !== "string") {
+    if (username && typeof username !== "string") {
       throw new Error("invalid username type");
     }
 
@@ -132,6 +132,10 @@ export class User {
       data.lobby_invites,
     );
   }
+
+  static fromJson(json) {
+    return Object.assign(new User(), json);
+  }
 }
 
 export async function createUser(user) {
@@ -181,18 +185,33 @@ export async function getUser(uuid) {
   }
 }
 
-export async function updateHighScore(user) {
-  if (!(user instanceof User)) {
-    throw new Error("user is not an instance of User class");
-  }
+// export async function updateHighScore(user) {
+//   if (!(user instanceof User)) {
+//     throw new Error("user is not an instance of User class");
+//   }
 
-  const docRef = doc(db, "user", user.uuid);
-  try {
-    await updateDoc(docRef, {
-      high_score: user.highScore,
-    });
-  } catch (e) {
-    throw e;
+//   const docRef = doc(db, "user", user.uuid);
+//   try {
+//     await updateDoc(docRef, {
+//       high_score: user.highScore,
+//     });
+//   } catch (e) {
+//     throw e;
+//   }
+// }
+
+export async function updateHighScore(userUuid, newHighScore) {
+  const docRef = doc(db, "user", userUuid);
+  const userDoc = await getDoc(docRef);
+  const currentHighScore = userDoc.data()?.high_score;
+  if (newHighScore > currentHighScore) {
+    try {
+      await updateDoc(docRef, {
+        high_score: newHighScore,
+      });
+    } catch (e) {
+      throw e;
+    }
   }
 }
 

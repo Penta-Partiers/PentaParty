@@ -22,14 +22,21 @@ import { Lobby as LobbyDb, LOBBY_STATUS_END, LOBBY_PLAYER_STATUS_NOT_STARTED,
     endGameForLobby, getShapeQueueSize, LOBBY_PLAYER_STATUS_ONGOING} from '../database/models/lobby';
 
 // Routing
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
+/**
+ * This component renders the spectator page, where spectators will create
+ * custom shapes to drop on the players' boards.
+ * 
+ * ==> Functional Requirements: FR22, FR23, FR24, FR25, FR28
+ */
 export default function SpectatorView() {
-    const { lobby } = useContext(Context);
-    const navigate = useNavigate();
-    const {state} = useLocation();
-    const { isHost } = state;
+    const { lobby, isHost, setLobby } = useContext(Context);
 
+    const navigate = useNavigate();
+
+    // Initialize the spectator's board to an empty one until a player is assigned
+    // ==> Functional Requirement: FR28
     const [board, setBoard] = useState(() => {
         var board = new Array(25);
         for (let i = 0; i < board.length; i++) {
@@ -46,13 +53,16 @@ export default function SpectatorView() {
 
     // Listen to real-time updates from the lobby
     // Reference: https://stackoverflow.com/questions/59944658/which-react-hook-to-use-with-firestore-onsnapshot
+    // ==> Functional Requirements: FR23, FR24, FR25, FR28
     useEffect(() => {
         const unsubscribe = onSnapshot(doc(db, "lobby", lobby.uuid), async (doc) => {
             let lobbyUpdate = LobbyDb.fromFirestore(doc);
 
             // Redirect to game summary page upon game end
+            // ==> Functional Requirement: FR22
             if (lobbyUpdate == null || lobbyUpdate.status == LOBBY_STATUS_END) {
-                navigate("/game-summary", { state: { isHost: isHost, lobby: lobbyUpdate, scoresList: players } });
+                setLobby(lobbyUpdate);
+                navigate("/game-summary");
             }
 
             let playersData = Object.entries(lobbyUpdate.players).map(([playerUuid, playerData]) => (
@@ -66,11 +76,13 @@ export default function SpectatorView() {
             setPlayers(playersData);
             
             // End the game if all players are done
-            if (isHost && await isGameFinished(lobbyUpdate)) {
+            // ==> Functional Requirement: FR22
+            if (isHost == "true" && await isGameFinished(lobbyUpdate)) {
                 await endGameForLobby(lobbyUpdate);
             }
 
             // Pick a random player if none is currently assigned, and make sure their game is still ongoing
+            // ==> Functional Requirements: FR23, FR28
             if (assignedPlayerUuid == "") {
                 let playerUuids = playersData
                     .filter((player) => (player.status == LOBBY_PLAYER_STATUS_ONGOING || player.status == LOBBY_PLAYER_STATUS_NOT_STARTED))
@@ -85,16 +97,20 @@ export default function SpectatorView() {
                 setBoard(boardStateUpdate);
             }
             // Watch the board state of the assigned player
+            // ==> Functional Requirement: FR28
             else {
                 let boardStateUpdate = PlayerHelper.objectToNestedArray(lobbyUpdate.playerBoards[assignedPlayerUuid])
                 setBoard(boardStateUpdate);
             }
         });
         return () => unsubscribe();
-    }, [assignedPlayerUuid, players]);
+    }, [assignedPlayerUuid, assignedPlayerUsername, players]);
 
     const [timerCount, setTimerCount] = useState(0);
 
+    // Dynamically change the time to submit a shape based on the length of
+    // a player's shape queue
+    // ==> Functional Requirement: FR25
     useEffect(() => {
         async function updateTimer() {
             if (assignedPlayerUuid != "") {
@@ -117,6 +133,7 @@ export default function SpectatorView() {
     }, [assignedPlayerUuid])
 
     // Decrement the timer every second
+    // ==> Functional Requirement: FR23, FR24, FR25
     useEffect(() => {
         let timer;
         if (assignedPlayerUuid != "") {
@@ -129,7 +146,6 @@ export default function SpectatorView() {
                 if (validateShape(widget)) {
                     submitShape();
                 } else {
-                    // TODO: display some sort of message to the player
                     console.log("invalid shape");
                 }
                 setAssignedPlayerUuid("");
@@ -141,10 +157,14 @@ export default function SpectatorView() {
         return () => clearTimeout(timer);
     }, [assignedPlayerUuid, timerCount])
 
+    // Send a shape to a player's shape queue
+    // ==> Functional Requirement: FR25
     async function submitShape() {
         await pushPendingShapes(lobby, assignedPlayerUuid, widget);
     }
 
+    // Render the spectator page
+    // ==> Functional Requirement: FR22, FR23, FR24, FR25, FR28
     return (
         <Grid
             container

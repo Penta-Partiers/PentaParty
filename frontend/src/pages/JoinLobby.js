@@ -5,7 +5,7 @@ import { useState, useContext, useCallback, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
 
 // Material UI
-import { Grid, Button, Typography, TextField, Alert, Tabs, Tab, CircularProgress, Paper } from '@mui/material';
+import { Grid, Button, Typography, TextField, Alert, Tabs, Tab, CircularProgress, Paper, Box, LinearProgress } from '@mui/material';
 
 // User Context
 import { Context } from "../auth/AuthContext";
@@ -18,21 +18,30 @@ import { User } from '../database/models/user';
 
 const LOBBY_LIMIT = 24;
 
+/**
+ * This component renders the join lobby page, where users can join lobbies
+ * by either entering the lobby code, or by accepting a lobby invite from a friend.
+ * 
+ * ==> Functional Requirements: FR9, FR10
+ */
 export default function JoinLobby() {
-    const {userDb, setUserDb, setLobby} = useContext(Context);
+    const {userDb, setUserDb, setLobby, setIsHost} = useContext(Context);
 
     const [lobbyCode, setLobbyCode] = useState("");
     const [displayError, setDisplayError] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
     const [tabIndex, setTabIndex] = useState(0);
     const [lobbyInvitesList, setLobbyInvitesList] = useState(null);
+    const [loading, setLoading] = useState(false);
 
     // Listen to real-time updates for the user
     // Reference: https://stackoverflow.com/questions/59944658/which-react-hook-to-use-with-firestore-onsnapshot
+    // ==> Functional Requirements: FR9, FR10
     useEffect(() => {
         const unsubscribe = onSnapshot(doc(db, "user", userDb.uuid), async (doc) => {
             let userUpdate = User.fromFirestore(doc);
             setUserDb(userUpdate);
+            localStorage.setItem("userDb", JSON.stringify(userUpdate));
             setLobbyInvitesList(userUpdate.lobbyInvites);
         });
         return () => unsubscribe();
@@ -40,16 +49,20 @@ export default function JoinLobby() {
 
     const navigate = useNavigate();
 
+    // Redirect back to the home page
     const backClick = () => {
         navigate("/home");
     }
 
+    // Save the lobby code text field's value
+    // ==> Functional Requirement: FR10
     function handleTextFieldChange(event) {
         setLobbyCode(event.target.value);
     }
 
     // Shared lobby-joining logic used when both entering the code manually, 
     // or when a lobby invite is accepted
+    // ==> Functional Requirements: FR9, FR10
     async function joinLobby(lobbyCode) {
         if (lobbyCode != "") {
             await getLobbyByCode(lobbyCode.toUpperCase())
@@ -64,9 +77,12 @@ export default function JoinLobby() {
                             }
                         }
                         setLobby(lobby);
+                        setIsHost("false");
+                        localStorage.setItem("lobby", JSON.stringify(lobby));
+                        localStorage.setItem("isHost", "false");
                         await removeLobbyInvite(userDb, lobbyCode);
                         await joinSpectators(lobby, userDb.uuid, userDb.username);
-                        navigate("/lobby/" + lobbyCode.toUpperCase(), { state: { isHost: false } });
+                        navigate("/lobby/" + lobbyCode.toUpperCase());
                     }
                     else {
                         setDisplayError(true);
@@ -77,6 +93,7 @@ export default function JoinLobby() {
                             setErrorMessage("Lobby no longer exists!");
                             await removeLobbyInvite(userDb, lobbyCode);
                         }
+                        setLoading(false);
                     }
                 })
                 .catch((error) => console.log(error));
@@ -84,28 +101,39 @@ export default function JoinLobby() {
         else {
             setDisplayError(true);
             setErrorMessage("Invalid lobby code!");
+            setLoading(false);
         }
     }
 
+    // Join a lobby by code
+    // ==> Functional Requirement: FR10
     async function handleJoinLobbyClick() {
+        setLoading(true);
         await joinLobby(lobbyCode);
     }
 
+    // Decline a lobby invite from a friend
+    // ==> Functional Requirement: FR9
     async function handleDeclineLobbyInviteClick(lobbyCode) {
         await removeLobbyInvite(userDb, lobbyCode);
     }
 
+    // Decline a lobby invite from a friend
+    // ==> Functional Requirement: FR9
     async function handleAcceptLobbyInviteClick(lobbyCode) {
+        setLoading(true);
         await joinLobby(lobbyCode);
     }
 
     // Handles on-click to change tabs
+    // ==> Functional Requirement: FR9, FR10
     const handleChange = (event, newTabIndex) => {
         setTabIndex(newTabIndex);
         setDisplayError(false);
     };
 
     // Renders the corresponding content depending on which tab is currently selected
+    // ==> Functional Requirement: FR9, FR10
     const renderTabContent = useCallback(() => {
         let content = null;
 
@@ -187,25 +215,34 @@ export default function JoinLobby() {
         )
     })
 
+    // Renders the join lobby page
+    // ==> Functional Requirement: FR9, FR10
     return (
-        <Grid
-            container
-            alignItems="center"
-            justifyContent="center"
-            sx={{ minHeight: '100vh' }}
-        >
-            <Grid item xs={5}>
-                <div className="flex flex-col items-center w-full space-y-6">
-                    <div className="flex justify-center w-full">
-                        <Tabs value={tabIndex} onChange={handleChange} variant='fullWidth' centered className="w-full border">
-                            <Tab label="Join Lobby" />
-                            <Tab label="Lobby Invites" />
-                        </Tabs>
+        <div className='h-screen overflow-hidden'>
+            { loading && (
+                <Box sx={{ width: '100%' }}>
+                    <LinearProgress />
+                </Box>
+            )}
+            <Grid
+                container
+                alignItems="center"
+                justifyContent="center"
+                sx={{ minHeight: '100vh' }}
+            >
+                <Grid item xs={5}>
+                    <div className="flex flex-col items-center w-full space-y-6">
+                        <div className="flex justify-center w-full">
+                            <Tabs value={tabIndex} onChange={handleChange} variant='fullWidth' centered className="w-full border">
+                                <Tab label="Join Lobby" />
+                                <Tab label="Lobby Invites" />
+                            </Tabs>
+                        </div>
+                        { renderTabContent() }
+                        <Button variant="outlined" onClick={backClick}>Back</Button>
                     </div>
-                    { renderTabContent() }
-                    <Button variant="outlined" onClick={backClick}>Back</Button>
-                </div>
+                </Grid>
             </Grid>
-        </Grid>
+        </div>
     )
 }
