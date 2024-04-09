@@ -84,34 +84,34 @@ export default function Home() {
 
     return (
         <div className="h-screen overflow-hidden">
-        { loading && (
-            <Box sx={{ width: '100%' }}>
-                <LinearProgress />
-            </Box>
-        )}
-        <div className="h-full flex items-center justify-center">
-            <div className="flex flex-col items-center space-y-10">
-                <div className="flex flex-col items-center">
-                    <Typography variant="h4">Highest Score</Typography>
-                    <Typography variant="h2">{userDb ? userDb.highScore : 0}</Typography>
+            { loading && (
+                <Box sx={{ width: '100%' }}>
+                    <LinearProgress />
+                </Box>
+            )}
+            <div className="h-full flex items-center justify-center">
+                <div className="flex flex-col items-center space-y-10">
+                    <div className="flex flex-col items-center">
+                        <Typography variant="h4">Highest Score</Typography>
+                        <Typography variant="h2">{userDb ? userDb.highScore : 0}</Typography>
+                    </div>
+                    <div className="flex justify-center space-x-20">
+                        {mainButtonsList.map((data, index) => (
+                            <div key={index} className="flex flex-col items-center space-y-2">
+                                <Button 
+                                    variant="outlined" 
+                                    onClick={data.onClick}
+                                    sx={{ borderRadius: 4 }} 
+                                    className="w-[100px] aspect-square flex items-center justify-center">
+                                    {data.icon}
+                                </Button>
+                                <Typography variant="subtitle1">{data.label}</Typography>
+                            </div>
+                        ))}
+                    </div>
+                    <Button variant="outlined" onClick={handleSignOut}>Sign Out</Button>
                 </div>
-                <div className="flex justify-center space-x-20">
-                    {mainButtonsList.map((data, index) => (
-                        <div key={index} className="flex flex-col items-center space-y-2">
-                            <Button 
-                                variant="outlined" 
-                                onClick={data.onClick}
-                                sx={{ borderRadius: 4 }} 
-                                className="w-[100px] aspect-square flex items-center justify-center">
-                                {data.icon}
-                            </Button>
-                            <Typography variant="subtitle1">{data.label}</Typography>
-                        </div>
-                    ))}
-                </div>
-                <Button variant="outlined" onClick={handleSignOut}>Sign Out</Button>
             </div>
-        </div>
         </div>
     )
 }

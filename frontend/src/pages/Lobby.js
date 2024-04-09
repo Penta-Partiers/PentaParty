@@ -5,19 +5,18 @@ import { useState, useContext, useEffect } from 'react';
 import { doc, onSnapshot } from "firebase/firestore";
 import { Lobby as LobbyDb, deleteLobby, inviteFriendToLobby, 
         joinPlayers, joinSpectators, leaveLobby, startGameForLobby,
-        LOBBY_STATUS_OPEN, LOBBY_STATUS_FULL,
-        LOBBY_STATUS_ONGOING, LOBBY_STATUS_END } from '../database/models/lobby';
-import { User, getUser } from '../database/models/user.js';
+        LOBBY_STATUS_ONGOING } from '../database/models/lobby';
+import { getUser } from '../database/models/user.js';
 import { db } from "../firebase.js";
 
 // User Context
 import { Context } from "../auth/AuthContext";
 
 // Routing
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 // Material UI
-import { Grid, Button, Paper, Typography, Modal, Alert, CircularProgress } from '@mui/material';
+import { Grid, Button, Paper, Typography, Modal, Alert, CircularProgress, Box, LinearProgress } from '@mui/material';
 
 const MAX_PLAYERS = 4;
 
@@ -74,14 +73,13 @@ function InviteFriendsModal({ isOpen, onClose, friendsRenderList, onInvite }) {
 export default function Lobby() {
     const {userDb, lobby, isHost, setLobby} = useContext(Context);
 
-    // const {state} = useLocation();
     const navigate = useNavigate();
 
-    // const [isHost, setIsHost] = useState(state.isHost)
     const [modalOpen, setModalOpen] = useState(false);
     const [displayError, setDisplayError] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
     const [friendsRenderList, setFriendsRenderList] = useState(null);
+    const [loading, setLoading] = useState(false);
 
     // Initialize friends list information for invites
     const initFriendsRenderList = async () => {
@@ -124,9 +122,7 @@ export default function Lobby() {
                 }
             }  
         });
-        
-        return () => unsubscribe();
-        
+        return () => unsubscribe();  
     }, [isHost, userDb]);
 
     const handleInviteClick = async (friendUuid) => {
@@ -135,22 +131,28 @@ export default function Lobby() {
     }
 
     async function handleJoinPlayersClick() {
+        setLoading(true);
         if (lobby.players.length >= MAX_PLAYERS) {
             console.log("Max number of players reached, cannot join.");
             setDisplayError(true);
             setErrorMessage("Max number of players reached!");
+            setLoading(false);
             return;
         }
         else {
             await joinPlayers(lobby, userDb.uuid, userDb.username);
+            setLoading(false);
         }
     }
 
     async function handleJoinSpectatorsClick() {
+        setLoading(true);
         await joinSpectators(lobby, userDb.uuid, userDb.username);
+        setLoading(false);
     }
 
     async function handleLeaveClick() {
+        setLoading(true);
         if (isHost == "true") {
             await deleteLobby(lobby)
                 .then(() => {
@@ -174,6 +176,7 @@ export default function Lobby() {
     }
 
     async function handleStartGameClick() {
+        setLoading(true);
         let playerCount = Object.keys(lobby.players).length;
         let spectatorCount = Object.keys(lobby.spectators).length
         if (playerCount > 0 && playerCount <= 4 && spectatorCount >= 1) {
@@ -182,76 +185,84 @@ export default function Lobby() {
         else {
             setDisplayError(true);
             setErrorMessage("Invalid lobby arrangement!");
+            setLoading(false);
         }
     }
 
     return (
-        <Grid
-            container
-            alignItems="center"
-            justifyContent="center"
-            sx={{ minHeight: '100vh' }}
-        >
-            <Grid item xs={7}>
-                <div className='flex flex-col items-center w-full p-2 space-y-8'>
-                    {displayError &&
-                        <Alert severity="error" onClose={() => setDisplayError(false)}>
-                            {errorMessage}
-                        </Alert>
-                    }
+        <div className="h-screen overflow-hidden">
+            { loading && (
+                <Box sx={{ width: '100%' }}>
+                    <LinearProgress />
+                </Box>
+            )}
+            <Grid
+                container
+                alignItems="center"
+                justifyContent="center"
+                sx={{ minHeight: '100vh' }}
+            >
+                <Grid item xs={7}>
+                    <div className='flex flex-col items-center w-full p-2 space-y-8'>
+                        {displayError &&
+                            <Alert severity="error" onClose={() => setDisplayError(false)}>
+                                {errorMessage}
+                            </Alert>
+                        }
 
-                    <Typography variant='h4'><b>Room Code:</b> {lobby ? lobby.code : <></>}</Typography>
+                        <Typography variant='h4'><b>Room Code:</b> {lobby ? lobby.code : <></>}</Typography>
 
-                    <InviteFriendsModal 
-                        isOpen={modalOpen} 
-                        onClose={() => setModalOpen(false)} 
-                        friendsRenderList={friendsRenderList} 
-                        onInvite={handleInviteClick} />
+                        <InviteFriendsModal 
+                            isOpen={modalOpen} 
+                            onClose={() => setModalOpen(false)} 
+                            friendsRenderList={friendsRenderList} 
+                            onInvite={handleInviteClick} />
 
-                    <div className='flex justify-center w-full space-x-4'>
-                        <div className='flex flex-col items-center w-1/2 space-y-2 p-2'>
-                            <Typography variant="h5"><b>Players</b></Typography>
-                            <div className='flex flex-col items-center h-80 w-full bg-slate-300 overflow-auto p-2 space-y-2 border border-slate-300'>
-                                {lobby && Object.entries(lobby.players).map(([playerId, playerData]) => (
-                                    <Paper elevation={2} key={playerId} sx={{ minHeight: "50px", width: "100%" }}>
-                                        <div className='flex items-center justify-center h-full'>
-                                            <Typography variant="h6">{playerData.username}</Typography>
-                                        </div>
-                                    </Paper>
-                                ))}
+                        <div className='flex justify-center w-full space-x-4'>
+                            <div className='flex flex-col items-center w-1/2 space-y-2 p-2'>
+                                <Typography variant="h5"><b>Players</b></Typography>
+                                <div className='flex flex-col items-center h-80 w-full bg-slate-300 overflow-auto p-2 space-y-2 border border-slate-300'>
+                                    {lobby && Object.entries(lobby.players).map(([playerId, playerData]) => (
+                                        <Paper elevation={2} key={playerId} sx={{ minHeight: "50px", width: "100%" }}>
+                                            <div className='flex items-center justify-center h-full'>
+                                                <Typography variant="h6">{playerData.username}</Typography>
+                                            </div>
+                                        </Paper>
+                                    ))}
+                                </div>
+                                <Button variant="contained" onClick={handleJoinPlayersClick}>Join Players</Button>
                             </div>
-                            <Button variant="contained" onClick={handleJoinPlayersClick}>Join Players</Button>
+                            <div className='flex flex-col items-center w-1/2 space-y-2 p-2'>
+                                <Typography variant="h5"><b>Spectators</b></Typography>
+                                <div className='flex flex-col items-center h-80 w-full bg-slate-300 overflow-auto p-2 space-y-2 border border-slate-300'>
+                                    {lobby && Object.entries(lobby.spectators).map(([spectatorId, spectatorData]) => (
+                                        <Paper elevation={2} key={spectatorId} sx={{ minHeight: "50px", width: "100%" }}>
+                                            <div className='flex items-center justify-center h-full'>
+                                                <Typography variant="h6">{spectatorData.username}</Typography>
+                                            </div>
+                                        </Paper>
+                                    ))}
+                                </div>
+                                <Button variant="contained" onClick={handleJoinSpectatorsClick}>Join Spectators</Button>
+                            </div>
                         </div>
-                        <div className='flex flex-col items-center w-1/2 space-y-2 p-2'>
-                            <Typography variant="h5"><b>Spectators</b></Typography>
-                            <div className='flex flex-col items-center h-80 w-full bg-slate-300 overflow-auto p-2 space-y-2 border border-slate-300'>
-                                {lobby && Object.entries(lobby.spectators).map(([spectatorId, spectatorData]) => (
-                                    <Paper elevation={2} key={spectatorId} sx={{ minHeight: "50px", width: "100%" }}>
-                                        <div className='flex items-center justify-center h-full'>
-                                            <Typography variant="h6">{spectatorData.username}</Typography>
-                                        </div>
-                                    </Paper>
-                                ))}
+
+                        <div className='flex items-center justify-between w-full'>
+                            <div className="w-[100px]">
+                                <Button variant="outlined" fullWidth={true} onClick={() => setModalOpen(true)}>Invite</Button>
                             </div>
-                            <Button variant="contained" onClick={handleJoinSpectatorsClick}>Join Spectators</Button>
+                            <div className="w-[100px]">
+                                {(isHost === "true") && 
+                                    <Button variant="contained" size="large" fullWidth={true} onClick={handleStartGameClick}>Start</Button>
+                                }
+                            </div>
+                            <div className="w-[100px]">
+                                <Button variant="outlined" fullWidth={true} onClick={handleLeaveClick}>Leave</Button>
+                            </div>
                         </div>
                     </div>
-
-                    <div className='flex items-center justify-between w-full'>
-                        <div className="w-[100px]">
-                            <Button variant="outlined" fullWidth={true} onClick={() => setModalOpen(true)}>Invite</Button>
-                        </div>
-                        <div className="w-[100px]">
-                            {(isHost === "true") && 
-                                <Button variant="contained" size="large" fullWidth={true} onClick={handleStartGameClick}>Start</Button>
-                            }
-                        </div>
-                        <div className="w-[100px]">
-                            <Button variant="outlined" fullWidth={true} onClick={handleLeaveClick}>Leave</Button>
-                        </div>
-                    </div>
-                </div>
+                </Grid>
             </Grid>
-        </Grid>
+        </div>
     )
 }

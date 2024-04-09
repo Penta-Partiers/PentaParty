@@ -52,7 +52,6 @@ export default function SpectatorView() {
             // Redirect to game summary page upon game end
             if (lobbyUpdate == null || lobbyUpdate.status == LOBBY_STATUS_END) {
                 setLobby(lobbyUpdate);
-                localStorage.setItem("lobby", JSON.stringify(lobbyUpdate));
                 navigate("/game-summary");
             }
 
@@ -130,7 +129,6 @@ export default function SpectatorView() {
                 if (validateShape(widget)) {
                     submitShape();
                 } else {
-                    // TODO: display some sort of message to the player
                     console.log("invalid shape");
                 }
                 setAssignedPlayerUuid("");

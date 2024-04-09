@@ -5,7 +5,7 @@ import { useState, useContext, useCallback, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
 
 // Material UI
-import { Grid, Button, Typography, TextField, Alert, Tabs, Tab, CircularProgress, Paper } from '@mui/material';
+import { Grid, Button, Typography, TextField, Alert, Tabs, Tab, CircularProgress, Paper, Box, LinearProgress } from '@mui/material';
 
 // User Context
 import { Context } from "../auth/AuthContext";
@@ -26,6 +26,7 @@ export default function JoinLobby() {
     const [errorMessage, setErrorMessage] = useState("");
     const [tabIndex, setTabIndex] = useState(0);
     const [lobbyInvitesList, setLobbyInvitesList] = useState(null);
+    const [loading, setLoading] = useState(false);
 
     // Listen to real-time updates for the user
     // Reference: https://stackoverflow.com/questions/59944658/which-react-hook-to-use-with-firestore-onsnapshot
@@ -81,6 +82,7 @@ export default function JoinLobby() {
                             setErrorMessage("Lobby no longer exists!");
                             await removeLobbyInvite(userDb, lobbyCode);
                         }
+                        setLoading(false);
                     }
                 })
                 .catch((error) => console.log(error));
@@ -88,10 +90,12 @@ export default function JoinLobby() {
         else {
             setDisplayError(true);
             setErrorMessage("Invalid lobby code!");
+            setLoading(false);
         }
     }
 
     async function handleJoinLobbyClick() {
+        setLoading(true);
         await joinLobby(lobbyCode);
     }
 
@@ -100,6 +104,7 @@ export default function JoinLobby() {
     }
 
     async function handleAcceptLobbyInviteClick(lobbyCode) {
+        setLoading(true);
         await joinLobby(lobbyCode);
     }
 
@@ -192,24 +197,31 @@ export default function JoinLobby() {
     })
 
     return (
-        <Grid
-            container
-            alignItems="center"
-            justifyContent="center"
-            sx={{ minHeight: '100vh' }}
-        >
-            <Grid item xs={5}>
-                <div className="flex flex-col items-center w-full space-y-6">
-                    <div className="flex justify-center w-full">
-                        <Tabs value={tabIndex} onChange={handleChange} variant='fullWidth' centered className="w-full border">
-                            <Tab label="Join Lobby" />
-                            <Tab label="Lobby Invites" />
-                        </Tabs>
+        <div className='h-screen overflow-hidden'>
+            { loading && (
+                <Box sx={{ width: '100%' }}>
+                    <LinearProgress />
+                </Box>
+            )}
+            <Grid
+                container
+                alignItems="center"
+                justifyContent="center"
+                sx={{ minHeight: '100vh' }}
+            >
+                <Grid item xs={5}>
+                    <div className="flex flex-col items-center w-full space-y-6">
+                        <div className="flex justify-center w-full">
+                            <Tabs value={tabIndex} onChange={handleChange} variant='fullWidth' centered className="w-full border">
+                                <Tab label="Join Lobby" />
+                                <Tab label="Lobby Invites" />
+                            </Tabs>
+                        </div>
+                        { renderTabContent() }
+                        <Button variant="outlined" onClick={backClick}>Back</Button>
                     </div>
-                    { renderTabContent() }
-                    <Button variant="outlined" onClick={backClick}>Back</Button>
-                </div>
+                </Grid>
             </Grid>
-        </Grid>
+        </div>
     )
 }

@@ -63,7 +63,7 @@ export default function GameSummary() {
             }
         }
         updateHighScores();
-    }, [scoresList, isHost]);
+    }, [scoresList]);
 
     const backClick = async () => {
         // Host deletes the lobby in the database
