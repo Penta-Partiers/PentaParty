@@ -8,7 +8,7 @@ import { Grid, Box, Typography, Button, CircularProgress } from '@mui/material';
 import GameBoard from '../components/GameBoard';
 
 // Custom hooks / game logic
-import { GAME_STATUS_NOT_STARTED, useGame } from '../tetris/useGame';
+import { GAME_STATUS_ENDED, GAME_STATUS_NOT_STARTED, useGame } from '../tetris/useGame';
 
 // User Context
 import { Context } from "../auth/AuthContext";
@@ -197,7 +197,6 @@ export default function PlayerView() {
                                 <Typography variant="h4">Scoreboard</Typography>
                                 {playerScores && playerScores.sort(compareScores).map((playerScoreData) => {
                                     return (
-                                        // TODO: change color or something based on each player's state
                                         <div key={playerScoreData.uuid} className="flex justify-between w-full">
                                             <div><b>{playerScoreData.username}:</b></div>
                                             <div>{playerScoreData.score}</div>
@@ -205,6 +204,22 @@ export default function PlayerView() {
                                     )
                                 })}
                             </Box>
+                            {
+                                (gameStatus == GAME_STATUS_ENDED) &&
+                                (
+                                    <Box
+                                        width={250} 
+                                        display="flex"
+                                        flexDirection="column"
+                                        justifyContent="center"
+                                        alignItems="center"
+                                        sx={{ mt: 2 }}
+                                    >
+                                        <Typography variant="h5"><b>Your game is over!</b></Typography>
+                                        <Typography variant="body1" className="text-center">Waiting for other players to finish...</Typography>
+                                    </Box>
+                                )
+                            }
                         </Grid>
                     </Grid>
                 )
