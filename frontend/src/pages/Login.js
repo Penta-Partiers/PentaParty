@@ -17,6 +17,12 @@ import { Context } from '../auth/AuthContext';
 import { Grid, Typography, Box, TextField, Button, Alert, Divider } from '@mui/material';
 import GoogleIcon from '@mui/icons-material/Google';
 
+/**
+ * This component renders the login page where users enter their credentials.
+ * If they do not yet have an account, they can be redirected to the sign up page.
+ * 
+ * ==> Functional Requirements: FR1, FR2, FR7
+ */
 export default function Login() {
     const { setUser, setUserDb } = useContext(Context);
 
@@ -26,6 +32,8 @@ export default function Login() {
 
     const navigate = useNavigate();
 
+    // Login with the user's entered credentials
+    // ==> Functional Requirements: FR2, FR7
     function handleLoginClick(e) {
         e.preventDefault();
 
@@ -50,6 +58,7 @@ export default function Login() {
     }
 
     // Update the email and password while the user is typing
+    // ==> Functional Requirement: FR2
     function handleEmailChange(event) {
         setEmail(event.target.value);
     }
@@ -57,6 +66,8 @@ export default function Login() {
         setPassword(event.target.value);
     }
 
+    // Users can log in with a google account
+    // ==> Functional Requirement: FR1, FR2
     const signInWithGoogle = async () => {
         try {
             signInWithPopup(auth, googleProvider)
@@ -87,8 +98,10 @@ export default function Login() {
         catch (err) {
             console.error(err);
         }
-      };
+    };
 
+    // Renders the login page
+    // ==> Functional Requirement: FR1, FR2
     return (
         <Grid
             container

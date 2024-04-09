@@ -20,20 +20,30 @@ import { Grid, Button, Paper, Typography, Modal, Alert, CircularProgress, Box, L
 
 const MAX_PLAYERS = 4;
 
+/**
+ * This component renders the popup modal for sending lobby invites to friends.
+ * 
+ * ==> Functional Requirement: FR9
+ */
 function InviteFriendsModal({ isOpen, onClose, friendsRenderList, onInvite }) {
     const [displaySuccessAlert, setDisplaySuccessAlert] = useState(false);
 
+    // Invite a friend to the lobby via their uuid
+    // ==> Functional Requirement: FR9
     async function handleInviteClick(friendUuid) {
         setDisplaySuccessAlert(false);
         await onInvite(friendUuid);
         setDisplaySuccessAlert(true);
     }
 
+    // Close the modal
     function handleClose() {
         setDisplaySuccessAlert(false);
         onClose();
     }
 
+    // Render the modal and the friends list inside of it
+    // ==> Functional Requirement: FR9
     return (
         <Modal
             open={isOpen}
@@ -70,6 +80,15 @@ function InviteFriendsModal({ isOpen, onClose, friendsRenderList, onInvite }) {
     )
 }
 
+/**
+ * This component renders the lobby page, where users can:
+ *  - become a player,
+ *  - become a spectator,
+ *  - invite friends to the lobby,
+ *  - or start the game.
+ * 
+ * ==> Functional Requirements: FR9, FR11, FR12
+ */
 export default function Lobby() {
     const {userDb, lobby, isHost, setLobby} = useContext(Context);
 
@@ -82,6 +101,7 @@ export default function Lobby() {
     const [loading, setLoading] = useState(false);
 
     // Initialize friends list information for invites
+    // ==> Functional Requirement: FR9
     const initFriendsRenderList = async () => {
         if (userDb) {
             // Reference for using async await with array map:
@@ -95,14 +115,19 @@ export default function Lobby() {
         }
     }
 
+    // Initialize the friends list for invitations once user data has been loaded
+    //
     // Reference for async state setting with useEffect:
     // https://stackoverflow.com/questions/71769990/react-18-destroy-is-not-a-function
+    //
+    // ==> Functional Requirement: FR9
     useEffect(() => {
         initFriendsRenderList();
     }, [userDb])
 
     // Listen to real-time updates from the lobby
     // Reference: https://stackoverflow.com/questions/59944658/which-react-hook-to-use-with-firestore-onsnapshot
+    // ==> Functional Requirements: FR9, FR11, FR12
     useEffect(() => {
         const unsubscribe = onSnapshot(doc(db, "lobby", lobby.uuid), (doc) => {
             let lobbyUpdate = LobbyDb.fromFirestore(doc);
@@ -110,6 +135,7 @@ export default function Lobby() {
             localStorage.setItem("lobby", JSON.stringify(lobbyUpdate));
 
             // Once game has started, redirect players and spectators accordingly
+            // ==> Functional Requirement: FR12
             if (lobbyUpdate && lobbyUpdate.status == LOBBY_STATUS_ONGOING) {
                 console.log("game started!");
                 if (Object.keys(lobbyUpdate.players).find(playerUuid => playerUuid == userDb.uuid)) {
@@ -125,11 +151,15 @@ export default function Lobby() {
         return () => unsubscribe();  
     }, [isHost, userDb]);
 
+    // Invite a friend to the lobby
+    // ==> Functional Requirement: FR9
     const handleInviteClick = async (friendUuid) => {
         await inviteFriendToLobby(friendUuid, lobby.code)
             .catch((error) => console.log(error));
     }
 
+    // Join the players side
+    // ==> Functional Requirement: FR11
     async function handleJoinPlayersClick() {
         setLoading(true);
         if (lobby.players.length >= MAX_PLAYERS) {
@@ -145,12 +175,16 @@ export default function Lobby() {
         }
     }
 
+    // Join the spectators side
+    // ==> Functional Requirement: FR11
     async function handleJoinSpectatorsClick() {
         setLoading(true);
         await joinSpectators(lobby, userDb.uuid, userDb.username);
         setLoading(false);
     }
 
+    // Leave the lobby
+    // ==> Functional Requirement: FR8
     async function handleLeaveClick() {
         setLoading(true);
         if (isHost == "true") {
@@ -175,6 +209,8 @@ export default function Lobby() {
         }
     }
 
+    // Start the game
+    // Functional Requirement: FR12
     async function handleStartGameClick() {
         setLoading(true);
         let playerCount = Object.keys(lobby.players).length;
@@ -189,6 +225,8 @@ export default function Lobby() {
         }
     }
 
+    // Render the lobby page
+    // ==> Functional Requirements: FR9, FR11, FR12
     return (
         <div className="h-screen overflow-hidden">
             { loading && (

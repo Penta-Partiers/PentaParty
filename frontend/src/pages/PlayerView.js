@@ -2,7 +2,7 @@
 import { useState, useEffect, useContext } from 'react';
 
 // Material UI
-import { Grid, Box, Typography, Button, CircularProgress } from '@mui/material';
+import { Grid, Box, Typography, CircularProgress } from '@mui/material';
 
 // Components
 import GameBoard from '../components/GameBoard';
@@ -30,6 +30,12 @@ import { useNavigate } from 'react-router-dom';
 // Util
 import { compareScores } from '../util/util.js';
 
+/**
+ * This component renders the player page, where players will drop and
+ * move shapes in their board.
+ * 
+ * ==> Functional requirements: FR13, FR14, FR21, FR22, FR25, FR26, FR27
+ */
 export default function PlayerView() {
     const { userDb, lobby, isHost, setLobby } = useContext(Context);
     const navigate = useNavigate();
@@ -50,6 +56,7 @@ export default function PlayerView() {
 
     // Listen to real-time updates from the lobby
     // Reference: https://stackoverflow.com/questions/59944658/which-react-hook-to-use-with-firestore-onsnapshot
+    // ==> Functional Requirements: FR13, FR14, FR21, FR22, FR25, FR26, FR27
     useEffect(() => {
         let docRef = doc(db, "lobby", lobby.uuid)
 
@@ -58,13 +65,15 @@ export default function PlayerView() {
                 let lobbyUpdate = LobbyDb.fromFirestore(doc);
 
                 // Redirect to game summary page upon game end
+                // ==> Functional Requirement: FR22
                 if (lobbyUpdate == null || lobbyUpdate.status == LOBBY_STATUS_END) {
                     setLobby(lobbyUpdate);
                     localStorage.setItem("lobby", JSON.stringify(lobbyUpdate));
                     navigate("/game-summary");
                 }
 
-                // Handle disconnection
+                // If a player disconnects then reconnects, resume their game
+                // ==> Functional Requirement: FR14
                 if (lobbyUpdate.players[userDb.uuid].status != LOBBY_PLAYER_STATUS_NOT_STARTED && gameStatus == GAME_STATUS_NOT_STARTED) {
                     let board = PlayerHelper.objectToNestedArray(lobbyUpdate.playerBoards[userDb.uuid]);
                     let score = lobbyUpdate.players[userDb.uuid].score;
@@ -77,6 +86,7 @@ export default function PlayerView() {
                 }
 
                 // Update local copy of scoreboard
+                // ==> Functional Requirement: FR26
                 let scoresList = Object.entries(lobbyUpdate.players).map(([playerUuid, playerData]) => (
                     {
                         uuid: playerUuid,
@@ -88,21 +98,25 @@ export default function PlayerView() {
                 setPlayerScores(scoresList);
 
                 // Start the game upon loading the page
+                // ==> Functional Requirement: FR14
                 if (lobbyUpdate.status == LOBBY_STATUS_ONGOING && lobbyUpdate.players[userDb.uuid].status == LOBBY_PLAYER_STATUS_NOT_STARTED) {
                     startGame(lobbyUpdate, userDb.uuid);
                     await startPlayerIndividualGame(lobbyUpdate, userDb.uuid);
                 }
-                // If the host is a player, check if the game is  
+                // If the host is a player, check if the game is over for all players
+                // ==> Functional Requirement: FR21
                 else if (isHost == "true" && await isGameFinished(lobbyUpdate)) {
                     await endGameForLobby(lobbyUpdate);
                 }
                 // Don't take any more action if your game has ended
+                // ==> Functional Requirement: FR21
                 if (lobbyUpdate.players[userDb.uuid].status == LOBBY_PLAYER_STATUS_END) {
                     return;
                 }
 
                 // If there are new shapes in the player's shape queue, add them to a local
                 // shape queue and update the database by popping the shapes that were read
+                // ==> Functional Requirement: FR25
                 if (lobbyUpdate.playerPendingShapes[userDb.uuid].length > 0) {
                     let poppedShapes = lobbyUpdate.playerPendingShapes[userDb.uuid];
                     popShapeQueue(lobby, userDb.uuid, poppedShapes.length);
@@ -113,6 +127,7 @@ export default function PlayerView() {
 
                 // If there are any pending rows, store a local count of the rows needed to be 
                 // added and pop the value in the database
+                // ==> Functional Requirement: FR27
                 if (lobbyUpdate.playerPendingRows[userDb.uuid] > 0) {
                     let pendingRows = lobbyUpdate.playerPendingRows[userDb.uuid];
                     popPendingRows(lobby, userDb.uuid, pendingRows);
@@ -124,6 +139,7 @@ export default function PlayerView() {
     }, [playerUuids, userDb, gameStatus]);
 
     // Process local shape queue
+    // ==> Functional Requirement: FR25
     useEffect(() => {
         if (localShapeQueue.length > 0) {
             let newShapeQueue = [...localShapeQueue];
@@ -136,6 +152,7 @@ export default function PlayerView() {
 
     // If the player has completed rows, broadcast them to the other players so that
     // they create incomplete rows on their boards
+    // ==> Functional Requirement: FR27
     useEffect(() => {
         if (playerUuids) {
             if (removedRowsCount > 0) {
@@ -150,6 +167,7 @@ export default function PlayerView() {
     }, [playerUuids, removedRowsCount])
 
     // If another player has completed rows, add incomplete rows to this player's board
+    // ==> Functional Requirement: FR27
     useEffect(() => {
         if (pendingRows > 0) {
             dispatchBoardState({ type: 'addIncompleteRows', rowCount: pendingRows });
@@ -158,6 +176,7 @@ export default function PlayerView() {
     }, [pendingRows])
 
     // Whenever the shape queue length changes, update the database with the new length
+    // ==> Functional Requirement: FR25
     useEffect(() => {
         async function updateShapeQueueSize() {
             if (lobby && userDb) {
@@ -167,6 +186,8 @@ export default function PlayerView() {
         updateShapeQueueSize();
     }, [shapeQueue, lobby, userDb])
 
+    // Render the game board
+    // ==> Functional Requirement: FR13, FR14
     return (
         <div className="min-h-screen flex justify-center items-center">
             {

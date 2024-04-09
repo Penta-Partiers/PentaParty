@@ -18,6 +18,12 @@ import { Context } from "../auth/AuthContext";
 // Util
 import { compareScores } from "../util/util";
 
+/**
+ * This component renders the game summary page, which displays username of
+ * the winner(s), as well as a list of each player's score.
+ * 
+ * ==> Functional requirement: FR22
+ */
 export default function GameSummary() {
     const { lobby, isHost } = useContext(Context);
 
@@ -27,6 +33,7 @@ export default function GameSummary() {
     const navigate = useNavigate();
 
     // Update player high scores and get winning players
+    // ==> Functional requirement: FR22
     useEffect(() => {
         if (lobby) {
             let scoresList = Object.entries(lobby.players).map(([playerUuid, playerData]) => (
@@ -40,6 +47,8 @@ export default function GameSummary() {
         }
     }, [lobby]);
 
+    // Get the usernames of the winning players
+    // ==> Functional requirement: FR22
     useEffect(() => {
         if (scoresList) {
             // Find the highest score value
@@ -53,6 +62,7 @@ export default function GameSummary() {
     }, [scoresList]);
 
     // Update high scores in database
+    // ==> Functional requirement: FR22
     useEffect(() => {
         async function updateHighScores() {
             // Only host updates the high scores
@@ -65,6 +75,8 @@ export default function GameSummary() {
         updateHighScores();
     }, [scoresList]);
 
+    // Redirect back to home page
+    // ==> Functional requirement: FR22
     const backClick = async () => {
         // Host deletes the lobby in the database
         if (isHost === "true") {
@@ -75,6 +87,8 @@ export default function GameSummary() {
         navigate("/home");
     }
 
+    // Display the winner / winners
+    // ==> Functional requirement: FR22
     function renderWinners() {
         if (winningPlayers) {
             if (winningPlayers.length > 1) {
@@ -104,6 +118,8 @@ export default function GameSummary() {
         }
     }
 
+    // Render the winner / winners and the list of each player's score
+    // ==> Functional requirement: FR22
     return (
         <div className="min-h-screen flex justify-center items-center">
             <div className="flex flex-col items-center space-y-8 w-96">

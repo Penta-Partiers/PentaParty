@@ -18,6 +18,15 @@ import { Grid, Tabs, Tab, Button, Paper, Typography, TextField, Alert, CircularP
 // Utilities
 import { validateEmail } from '../util/util';
 
+/**
+ * This component renders the friends page, where users can:
+ *  - view their friends list,
+ *  - remove friends,
+ *  - send friend requests,
+ *  - or accept/deny pending friend requests.
+ * 
+ * ==> Functional Requirements: FR3, FR4, FR5 
+ */
 export default function Friends() {
     const {userDb, setUserDb} = useContext(Context);
 
@@ -33,14 +42,19 @@ export default function Friends() {
 
     // Listen to real-time updates for the user
     // Reference: https://stackoverflow.com/questions/59944658/which-react-hook-to-use-with-firestore-onsnapshot
+    // ==> Functional Requirements: FR3, FR4, FR5
     useEffect(() => {
         const unsubscribe = onSnapshot(doc(db, "user", userDb.uuid), async (doc) => {
             let userUpdate = User.fromFirestore(doc);
             setUserDb(userUpdate);
             localStorage.setItem("userDb", JSON.stringify(userDb));
 
+            // Get friends list from database
+            //
             // Reference for using async await with array map:
             // https://stackoverflow.com/questions/40140149/use-async-await-with-array-map
+            //
+            // ==> Functional Requirements: FR3, FR4, FR5
             let friendsRenderList = await Promise.all(userUpdate.friends.map(async (friendUuid) => {
                 return await getUser(friendUuid)
                     .then((friend) => ({ uuid: friend.uuid, username: friend.username }))
@@ -48,6 +62,8 @@ export default function Friends() {
             }));
             setFriendsList(friendsRenderList);
 
+            // Get pending friends list from database
+            // ==> Functional Requirement: FR4
             let pendingFriendsRenderList = await Promise.all(userUpdate.pendingFriends.map(async (pendingFriendUuid) => {
                 return await getUser(pendingFriendUuid)
                     .then((pendingFriend) => ({ uuid: pendingFriend.uuid, username: pendingFriend.username }))
@@ -60,14 +76,18 @@ export default function Friends() {
 
     const navigate = useNavigate();
 
+    // Change between tabs on the page
     const handleChange = (event, newTabIndex) => {
         setTabIndex(newTabIndex);
     };
 
+    // Redirect back to the home page
     const backClick = () => {
         navigate("/home");
     }
 
+    // Remove a friend from the user's friends list
+    // ==> Functional Requirement: FR5
     async function handleRemoveFriendClick(friendUuid) {
         // Remove friend from current user's friends list
         await removeFriend(userDb, friendUuid);
@@ -77,6 +97,8 @@ export default function Friends() {
             .then(async (friend) => await removeFriend(friend, userDb.uuid));
     }
 
+    // Accept a pending friend request
+    // ==> Functional Requirement: FR4
     async function handleAcceptFriendRequestClick(requesterUuid) {
         // Add requester to current user's friends list and clear them from their pending list
         await addFriend(userDb, requesterUuid);
@@ -90,10 +112,14 @@ export default function Friends() {
             });
     }
 
+    // Deny a pending friend request
+    // ==> Functional Requirement: FR4
     async function handleDeclineFriendRequestClick(requesterUuid) {
         await removePendingFriend(userDb, requesterUuid);
     }
 
+    // Send a friend request
+    // ==> Functional Requirement: FR3
     async function handleAddFriendClick(e) {
         // Display an error alert if email is not a properly-formatted email
         if (!validateEmail(addFriendEmail)) {
@@ -143,11 +169,14 @@ export default function Friends() {
         }
     }
 
+    // Save the add friend text field's value
+    // ==> Functional Requirement: FR3
     function handleAddFriendTextFieldChange(event) {
         setAddFriendEmail(event.target.value);
     }
 
     // Renders the corresponding content depending on which tab is currently selected
+    // ==> Functional Requirement: FR3, FR4, FR5
     const renderTabContent = useCallback(() => {
         let content = null;
 
@@ -264,6 +293,8 @@ export default function Friends() {
         displaySuccessMessage, pendingFriendsList, 
         displayAddFriendError, loadingAddFriendResult])
 
+    // Renders the friends page
+    // ==> Functional Requirement: FR3, FR4, FR5
     return (
         <Grid
             container

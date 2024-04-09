@@ -5,6 +5,8 @@ export const NUM_COLS = 13;
 /**
  * Returns an empty widget.
  * @returns {[[number]]}
+ * 
+ * ==> Functional Requirement: FR23
  */
 export function clearWidget() {
     var clearedWidget = new Array(5);
@@ -19,6 +21,8 @@ export function clearWidget() {
  * 
  * @param {[[number]]} widget The state of the spectator widget
  * @returns {array[array[number, number]]} An array of tuples that dictate the x and y position of each point making up the shape
+ * 
+ * ==> Functional Requirement: FR25
  */
 export function convertToShape(widget) {
     var shape = new Array();
@@ -100,6 +104,8 @@ export function convertToShape(widget) {
  * @param {number} row 
  * @param {number} col 
  * @returns {[[number]]}
+ * 
+ * ==> Functional Requirements: FR23, FR24
  */
 export function handleWidgetClick(widget, row, col) {
     let newWidget = [...widget]
@@ -127,6 +133,8 @@ export function handleWidgetClick(widget, row, col) {
 
 /**
  * Custom React hook for managing spectator widget state.
+ * 
+ * ==> Functional Requirements: FR23, FR24, FR25
  */
 export function useWidget() {
     const [widget, setWidget] = useState(() => {
@@ -153,6 +161,8 @@ export function useWidget() {
  * otherwise returns false.
  * @param {[[number]]} widget 
  * @returns {boolean}
+ * 
+ * ==> Functional Requirement: FR24
  */
 export function validateShape(widget) {
     var count = 0

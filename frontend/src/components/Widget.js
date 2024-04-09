@@ -1,3 +1,8 @@
+/** 
+ * Renders the spectator widget where they draw custom shapes for players.
+ * 
+ * ==> Functional Requirement: FR23, FR24, FR25
+*/
 export default function Widget({ widget, onSquareClick }) {
     return (
         <div className="border-2 border-solid border-slate-500 w-fit">

@@ -22,6 +22,15 @@ import AddBoxOutlinedIcon from '@mui/icons-material/AddBoxOutlined';
 import VideogameAssetOutlinedIcon from '@mui/icons-material/VideogameAssetOutlined';
 import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline';
 
+/**
+ * This component renders the home page, where users can:
+ *  - see their highest score,
+ *  - create a new lobby,
+ *  - go to the join lobby page,
+ *  - or go to the friends page.
+ * 
+ * ==> Functional Requirements: FR2, FR3, FR4, FR5, FR6, FR8, FR9, FR10
+ */
 export default function Home() {
     const {userDb, setLobby, setIsHost} = useContext(Context);
 
@@ -29,6 +38,8 @@ export default function Home() {
 
     const navigate = useNavigate();
 
+    // Signs the user out of PentaParty
+    // ==> Functional Requirement: FR2
     const handleSignOut = () => {
         const auth = getAuth();
         signOut(auth)
@@ -36,7 +47,11 @@ export default function Home() {
             .catch((error) => console.error(error));
     }
 
+    // Define each button's icon, label, and on-click behaviour
+    // ==> Functional Requirements: FR3, FR4, FR5, FR8, FR9, FR10
     const mainButtonsList = [
+        // Create Lobby button
+        // ==> Functional Requirement: FR8
         {
             icon: <AddBoxOutlinedIcon sx={{ fontSize: 70 }}/>,
             label: "Create Lobby",
@@ -66,6 +81,8 @@ export default function Home() {
                     });
             },
         },
+        // Join Lobby button
+        // ==> Functional Requirements: FR9, FR10
         {
             icon: <VideogameAssetOutlinedIcon sx={{ fontSize: 70 }}/>,
             label: "Join Lobby",
@@ -73,6 +90,8 @@ export default function Home() {
                 navigate("/join-lobby");
             },
         },
+        // Friends button
+        // ==> Functional Requirements: FR3, FR4, FR5
         {
             icon: <PeopleOutlineIcon sx={{ fontSize: 70 }}/>,
             label: "Friends",
@@ -82,6 +101,8 @@ export default function Home() {
         }
     ]
 
+    // Renders the home page
+    // ==> Functional Requirements: FR3, FR4, FR5, FR8, FR9, FR10
     return (
         <div className="h-screen overflow-hidden">
             { loading && (

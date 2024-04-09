@@ -18,6 +18,12 @@ import { User } from '../database/models/user';
 
 const LOBBY_LIMIT = 24;
 
+/**
+ * This component renders the join lobby page, where users can join lobbies
+ * by either entering the lobby code, or by accepting a lobby invite from a friend.
+ * 
+ * ==> Functional Requirements: FR9, FR10
+ */
 export default function JoinLobby() {
     const {userDb, setUserDb, setLobby, setIsHost} = useContext(Context);
 
@@ -30,6 +36,7 @@ export default function JoinLobby() {
 
     // Listen to real-time updates for the user
     // Reference: https://stackoverflow.com/questions/59944658/which-react-hook-to-use-with-firestore-onsnapshot
+    // ==> Functional Requirements: FR9, FR10
     useEffect(() => {
         const unsubscribe = onSnapshot(doc(db, "user", userDb.uuid), async (doc) => {
             let userUpdate = User.fromFirestore(doc);
@@ -42,16 +49,20 @@ export default function JoinLobby() {
 
     const navigate = useNavigate();
 
+    // Redirect back to the home page
     const backClick = () => {
         navigate("/home");
     }
 
+    // Save the lobby code text field's value
+    // ==> Functional Requirement: FR10
     function handleTextFieldChange(event) {
         setLobbyCode(event.target.value);
     }
 
     // Shared lobby-joining logic used when both entering the code manually, 
     // or when a lobby invite is accepted
+    // ==> Functional Requirements: FR9, FR10
     async function joinLobby(lobbyCode) {
         if (lobbyCode != "") {
             await getLobbyByCode(lobbyCode.toUpperCase())
@@ -94,27 +105,35 @@ export default function JoinLobby() {
         }
     }
 
+    // Join a lobby by code
+    // ==> Functional Requirement: FR10
     async function handleJoinLobbyClick() {
         setLoading(true);
         await joinLobby(lobbyCode);
     }
 
+    // Decline a lobby invite from a friend
+    // ==> Functional Requirement: FR9
     async function handleDeclineLobbyInviteClick(lobbyCode) {
         await removeLobbyInvite(userDb, lobbyCode);
     }
 
+    // Decline a lobby invite from a friend
+    // ==> Functional Requirement: FR9
     async function handleAcceptLobbyInviteClick(lobbyCode) {
         setLoading(true);
         await joinLobby(lobbyCode);
     }
 
     // Handles on-click to change tabs
+    // ==> Functional Requirement: FR9, FR10
     const handleChange = (event, newTabIndex) => {
         setTabIndex(newTabIndex);
         setDisplayError(false);
     };
 
     // Renders the corresponding content depending on which tab is currently selected
+    // ==> Functional Requirement: FR9, FR10
     const renderTabContent = useCallback(() => {
         let content = null;
 
@@ -196,6 +215,8 @@ export default function JoinLobby() {
         )
     })
 
+    // Renders the join lobby page
+    // ==> Functional Requirement: FR9, FR10
     return (
         <div className='h-screen overflow-hidden'>
             { loading && (

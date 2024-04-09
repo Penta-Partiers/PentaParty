@@ -1,5 +1,7 @@
 import { Grid, CircularProgress } from '@mui/material';
 
+// Displays a loading progress circle while user data is being fetched or processed
+// Functional Requirement: FR1, FR2
 export default function Loading() {
     return (
         <Grid
