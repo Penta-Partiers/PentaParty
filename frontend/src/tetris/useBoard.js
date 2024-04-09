@@ -135,7 +135,8 @@ export function boardStateReducer(state, action) {
             newState.currentShapePoints = getCurrentShapePoints(action.board);
             break;
         case 'ended':
-            newState.board = convertAllToStatic(action.board);
+            newState.board = action.board;
+            convertAllToStatic(newState.board);
             break;
         default:
             // Debugging - this shouldn't ever happen

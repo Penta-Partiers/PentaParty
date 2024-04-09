@@ -61,9 +61,11 @@ export function useGame() {
     useEffect(endGameCheck, [board]);
 
     function endGameCheck() {
-        if (checkEndGame(board)) {
-            // setGameInProgress(false);
-            setGameStatus(GAME_STATUS_ENDED);
+        if (board) {
+            if (checkEndGame(board)) {
+                // setGameInProgress(false);
+                setGameStatus(GAME_STATUS_ENDED);
+            }
         }
     }
 
@@ -122,13 +124,15 @@ export function useGame() {
     useEffect(() => {updatePlayerScore()}, [board, score, checkCompleteRows, gameStatus]);
 
     async function updatePlayerScore() {
-        if (gameStatus != GAME_STATUS_ENDED) {
-            if (lobby != null) {
-                let newScore = score + checkCompleteRows(board)
-                setScore(newScore);
-                await updateScore(lobby, playerUuid, newScore);
+        if (board) {
+            if (gameStatus != GAME_STATUS_ENDED) {
+                if (lobby != null) {
+                    let newScore = score + checkCompleteRows(board)
+                    setScore(newScore);
+                    await updateScore(lobby, playerUuid, newScore);
+                }
             }
-        }
+        }   
     }
 
     function checkCompleteRows(board) {

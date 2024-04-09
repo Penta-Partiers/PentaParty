@@ -67,7 +67,7 @@ export default function GameSummary() {
 
     const backClick = async () => {
         // Host deletes the lobby in the database
-        if (isHost == "true") {
+        if (isHost === "true") {
             await deleteLobby(lobby);
         }
         localStorage.setItem("lobby", null);

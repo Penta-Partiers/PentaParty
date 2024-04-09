@@ -82,6 +82,10 @@ export function AuthContext({ children }) {
         }
     }, [])
 
+    useEffect(() => {
+        localStorage.setItem("userDb", JSON.stringify(userDb));
+    }, [userDb]);
+
     // Children pages have access to the user object and a setter
     // function to update the user
     const values = {

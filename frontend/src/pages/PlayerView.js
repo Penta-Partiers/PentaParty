@@ -178,9 +178,11 @@ export default function PlayerView() {
                         justifyContent="center"
                         alignItems="flex-start"
                     >
-                        <Grid item>
-                            <GameBoard boardState={board} currentColor={currentColor} gameStatus={gameStatus} />
-                        </Grid>
+                        {board && 
+                            <Grid item>
+                                <GameBoard boardState={board} currentColor={currentColor} gameStatus={gameStatus} />
+                            </Grid>
+                        }
                         <Grid item>
                             <Box 
                                 width={250} 
