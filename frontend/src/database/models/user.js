@@ -14,11 +14,6 @@ import {
 import { db } from "../../firebase.js";
 import { validateEmail } from "../../util/util.js";
 
-
-/**
- *  User class to help encoding and parsing User data from/to database required format
- *  ==> Functional Requirements: FR1, FR2, FR3, FR4, FR6, FR9
- */
 export class User {
   constructor(uuid, email, username, friends, pendingFriends, highScore, lobbyInvites) {
     if (email && !validateEmail(email)) {
@@ -75,10 +70,29 @@ export class User {
     }
   }
 
-  /**
-   *  Encode user class data into database required format
-   *  ==> Functional Requirements: FR1
-   */
+  toString() {
+    return (
+      "uuid: " +
+      this.uuid +
+      ", " +
+      "email: " +
+      this.email +
+      ", " +
+      "username: " +
+      this.username +
+      ", " +
+      "friends: [" +
+      this.friends +
+      "], " +
+      "pending friends: [" +
+      this.pendingFriends +
+      "]" +
+      "lobby invites: [" +
+      this.lobbyInvites +
+      "]"
+    );
+  }
+
   toFirestore() {
     return {
       email: this.email,
@@ -90,10 +104,6 @@ export class User {
     };
   }
 
-  /**
-   *  Set user highest score
-   *  ==> Functional Requirements: FR1, FR6
-   */
   setScore(score) {
     if (typeof score !== "number") {
       throw new Error("invalid score type");
@@ -102,10 +112,6 @@ export class User {
     this.highScore = score;
   }
 
-  /**
-   *  Set user username
-   *  ==> Functional Requirements: FR1
-   */
   setUsername(username) {
     if (typeof username !== "string") {
       throw new Error("invalid username type");
@@ -114,10 +120,6 @@ export class User {
     this.username = username;
   }
 
-  /**
-   *  Pasre user class data from database required format
-   *  ==> Functional Requirements: FR2, FR3, FR4, FR9
-   */
   static fromFirestore(snapshot, options) {
     const data = snapshot.data(options);
     return new User(
@@ -136,10 +138,6 @@ export class User {
   }
 }
 
-/**
- *  Create a new user in database
- *  ==> Functional Requirements: FR1
- */
 export async function createUser(user) {
   if (!(user instanceof User)) {
     throw new Error("user is not an instance of User class");
@@ -152,10 +150,6 @@ export async function createUser(user) {
   }
 }
 
-/**
- *  Get user uuid from email in database
- *  ==> Functional Requirements: FR3
- */
 export async function getUuidByEmail(email) {
   if (!validateEmail(email)) {
     throw new Error("invalid email address");
@@ -177,10 +171,6 @@ export async function getUuidByEmail(email) {
   }
 }
 
-/**
- *  Get user data from uuid in database
- *  ==> Functional Requirements: FR1, FR2, FR3, FR4, FR6, FR10, FR11
- */
 export async function getUser(uuid) {
   const docRef = doc(db, "user", uuid);
   try {
@@ -195,29 +185,36 @@ export async function getUser(uuid) {
   }
 }
 
-/**
- *  Update user highest score in database
- *  ==> Functional Requirements: FR6, FR22
- */
-export async function updateHighScore(user) {
-  if (!(user instanceof User)) {
-    throw new Error("user is not an instance of User class");
-  }
+// export async function updateHighScore(user) {
+//   if (!(user instanceof User)) {
+//     throw new Error("user is not an instance of User class");
+//   }
 
-  const docRef = doc(db, "user", user.uuid);
-  try {
-    await updateDoc(docRef, {
-      high_score: user.highScore,
-    });
-  } catch (e) {
-    throw e;
+//   const docRef = doc(db, "user", user.uuid);
+//   try {
+//     await updateDoc(docRef, {
+//       high_score: user.highScore,
+//     });
+//   } catch (e) {
+//     throw e;
+//   }
+// }
+
+export async function updateHighScore(userUuid, newHighScore) {
+  const docRef = doc(db, "user", userUuid);
+  const userDoc = await getDoc(docRef);
+  const currentHighScore = userDoc.data()?.high_score;
+  if (newHighScore > currentHighScore) {
+    try {
+      await updateDoc(docRef, {
+        high_score: newHighScore,
+      });
+    } catch (e) {
+      throw e;
+    }
   }
 }
 
-/**
- *  Add a user to current user's friend list in database
- *  ==> Functional Requirements: FR4
- */
 export async function addFriend(user, friendUuid) {
   if (!(user instanceof User)) {
     throw new Error("user is not an instance of User class");
@@ -247,10 +244,6 @@ export async function addFriend(user, friendUuid) {
   }
 }
 
-/**
- *  Add a user to current user's pending friend list in database
- *  ==> Functional Requirements: FR3, FR4
- */
 export async function addPendingFriend(requester, receiverUuid) {
   if (!(requester instanceof User)) {
     throw new Error("requester is not an instance of User class");
@@ -275,10 +268,21 @@ export async function addPendingFriend(requester, receiverUuid) {
   }
 }
 
-/**
- *  Remove a user from current user's friend list in database
- *  ==> Functional Requirements: FR5
- */
+export async function updateUsername(user) {
+  if (!(user instanceof User)) {
+    throw new Error("user is not an instance of User class");
+  }
+
+  const docRef = doc(db, "user", user.uuid);
+  try {
+    await updateDoc(docRef, {
+      username: user.username,
+    });
+  } catch (e) {
+    throw e;
+  }
+}
+
 export async function removeFriend(user, friendUuid) {
   if (!(user instanceof User)) {
     throw new Error("user is not an instance of User class");
@@ -308,10 +312,6 @@ export async function removeFriend(user, friendUuid) {
   }
 }
 
-/**
- *  Remove a user from current user's pending friend list in database
- *  ==> Functional Requirements: FR4
- */
 export async function removePendingFriend(user, friendUuid) {
   if (!(user instanceof User)) {
     throw new Error("user is not an instance of User class");

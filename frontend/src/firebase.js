@@ -4,7 +4,10 @@ import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getEnvOrExit } from './config.js';
 import { getFirestore } from 'firebase/firestore';
 
-// Read env file for firebase credentials
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+// Your web app's Firebase configuration
+
 const firebaseConfig = {
   apiKey: getEnvOrExit("REACT_APP_FIREBASE_API_KEY"),
   authDomain: getEnvOrExit("REACT_APP_FIREBASE_AUTH_DOMAIN"),

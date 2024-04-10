@@ -16,9 +16,12 @@ import {
   increment,
 } from "firebase/firestore";
 import { db } from "../../firebase.js";
+import { User } from "./user.js";
 import { initializeEmptyBoard } from "../../tetris/useBoard";
 
 const LOBBY_CODE_LENGTH = 6;
+const LOBBY_BOARD_ROWS_LENGTH = 25;
+const LOBBY_BOARD_COLS_LENGTH = 13;
 
 export const LOBBY_STATUS_OPEN = "open";
 export const LOBBY_STATUS_FULL = "full";
@@ -29,10 +32,6 @@ export const LOBBY_PLAYER_STATUS_NOT_STARTED = "not started";
 export const LOBBY_PLAYER_STATUS_ONGOING = "ongoing";
 export const LOBBY_PLAYER_STATUS_END = "end";
 
-/**
- *  Player helper class to help encoding and parsing player data from/to database required format
- *  ==> Functional Requirements: FR11, FR26, FR27, FR28
- */
 export class PlayerHelper {
   constructor(username) {
     this.score = 0;
@@ -40,10 +39,6 @@ export class PlayerHelper {
     this.status = LOBBY_PLAYER_STATUS_NOT_STARTED;
   }
 
-  /**
-   * Encode player helper class data into database required format
-   * ==> Functional Requirements: FR11, FR26
-   */
   toFirestore() {
     return {
       score: this.score,
@@ -52,10 +47,6 @@ export class PlayerHelper {
     };
   }
 
-  /**
-   * Parse database data into game board format
-   * ==> Functional Requirements: FR28
-   */
   static nestedArrayToObject(nested) {
     let rslt = {};
     for (let i = 0; i < nested.length; i++) {
@@ -65,10 +56,6 @@ export class PlayerHelper {
     return rslt;
   }
 
-  /**
-   * Encode game board into database required format
-   * ==> Functional Requirements: FR28
-   */
   static objectToNestedArray(obj) {
     let rslt = [];
     let idx = 0;
@@ -81,10 +68,6 @@ export class PlayerHelper {
   }
 }
 
-/**
- *  Lobby class to help encoding and parsing player data from/to database required format
- *  ==> Functional Requirements: FR8, FR9, FR10
- */
 export class Lobby {
   constructor(code, hostUuid, uuid, playerBoards, playerPendingRows, playerPendingShapes, playerPendingShapesSize, players, spectators, status) {
     if (code && typeof code !== "string" && code.length != LOBBY_CODE_LENGTH) {
@@ -183,10 +166,30 @@ export class Lobby {
     }
   }
 
-  /**
-   *  Encode lobby class data into database required format
-   *  ==> Functional Requirements: FR8
-   */
+  toString() {
+    return (
+      "uuid: " +
+      this.uuid +
+      ", " +
+      "code: " +
+      this.code +
+      ", " +
+      "hostUuid: " +
+      this.hostUuid +
+      ", " +
+      "players: [" +
+      this.players +
+      "]" +
+      ", " +
+      "spectators: [" +
+      this.spectators +
+      "]" +
+      ", " +
+      "status: " +
+      this.status
+    );
+  }
+
   toFirestore() {
     return {
       code: this.code,
@@ -201,10 +204,14 @@ export class Lobby {
     };
   }
 
-  /**
-   *  Setter method for new uuid
-   *  ==> Functional Requirements: FR8
-   */
+  setHost(hostUuid) {
+    if (typeof hostUuid !== "string") {
+      throw new Error("invalid hostUuid type");
+    }
+
+    this.hostUuid = hostUuid;
+  }
+
   setUuid(uuid) {
     if (typeof uuid !== "string") {
       throw new Error("invalid uuid type");
@@ -213,10 +220,19 @@ export class Lobby {
     this.uuid = uuid;
   }
 
-  /**
-   *  Parse lobby class data from database required format
-   *  ==> Functional Requirements: FR9, FR10
-   */
+  setStatus(status) {
+    if (
+      status != LOBBY_STATUS_OPEN &&
+      status != LOBBY_STATUS_ONGOING &&
+      status != LOBBY_STATUS_FULL &&
+      status != LOBBY_STATUS_END
+    ) {
+      throw new Error("invalid status: " + status);
+    }
+
+    this.status = status;
+  }
+
   static fromFirestore(snapshot, options) {
     const data = snapshot.data(options);
     if (data) {
@@ -236,13 +252,22 @@ export class Lobby {
     }
     return null;
   }
+
+  static fromFirestorePlayerData(snapshot, options) {
+    const data = snapshot.data(options);
+    if (data) {
+      console.log(data);
+      return data; // Object {"uuid": Shape / Board} or Number of pendingRows: number
+    }
+    return null;
+  }
+
+  static fromJson(json) {
+    return Object.assign(new Lobby, json);
+  }
 }
 
 // Lobby actions
-/**
- *  Create new lobby in database
- *  ==> Functional Requirements: FR8
- */
 export async function createLobby(lobby) {
   if (!(lobby instanceof Lobby)) {
     throw new Error("lobby is not an instance of Lobby class");
@@ -256,10 +281,6 @@ export async function createLobby(lobby) {
   }
 }
 
-/**
- *  Get lobby instance by lobby code
- *  ==> Functional Requirements: FR9, FR10
- */
 export async function getLobbyByCode(code) {
   if (typeof code !== "string" && code.length != LOBBY_CODE_LENGTH) {
     throw new Error("invalid lobby code");
@@ -281,10 +302,6 @@ export async function getLobbyByCode(code) {
   }
 }
 
-/**
- *  Check if a lobby exist
- *  ==> Functional Requirements: FR9, FR10
- */
 export async function isLobbyCodeExist(code) {
   if (typeof code !== "string" && code.length != LOBBY_CODE_LENGTH) {
     throw new Error("invalid lobby code");
@@ -302,10 +319,39 @@ export async function isLobbyCodeExist(code) {
   }
 }
 
-/**
- *  Delete a lobby in database
- *  ==> Functional Requirements: FR21
- */
+export async function updateHost(lobby, hostUuid) {
+  if (!(lobby instanceof Lobby)) {
+    throw new Error("lobby is not an instance of Lobby class");
+  }
+
+  if (typeof hostUuid !== "string") {
+    throw new Error("invalid hostUuid type");
+  }
+
+  const newHostRef = doc(db, "user", hostUuid);
+  try {
+    const newHostDoc = await getDoc(newHostRef);
+    if (!newHostDoc.exists()) {
+      throw new Error("new host uuid does not exist");
+    }
+  } catch (e) {
+    throw e;
+  }
+
+  if (lobby.uuid == null) {
+    throw new Error("missing lobby uuid");
+  }
+
+  const docRef = doc(db, "lobby", lobby.uuid);
+  try {
+    await updateDoc(docRef, {
+      host: hostUuid,
+    });
+  } catch (e) {
+    throw e;
+  }
+}
+
 export async function deleteLobby(lobby) {
   if (lobby.uuid == null) {
     throw new Error("missing lobby uuid");
@@ -324,10 +370,6 @@ export async function deleteLobby(lobby) {
   }
 }
 
-/**
- *  Add a new play to lobby in database / switch to player row
- *  ==> Functional Requirements: FR10, FR11
- */
 export async function joinPlayers(lobby, uuid, username) {
   const lobbyRef = doc(db, "lobby", lobby.uuid);
   const lobbyDoc = await getDoc(lobbyRef);
@@ -379,10 +421,6 @@ export async function joinPlayers(lobby, uuid, username) {
   }
 }
 
-/**
- *  Add a new spectator to lobby in database / switch to spectator role
- *  ==> Functional Requirements: FR11
- */
 export async function joinSpectators(lobby, uuid, username) {
   const lobbyRef = doc(db, "lobby", lobby.uuid);
   const lobbyDoc = await getDoc(lobbyRef);
@@ -427,10 +465,6 @@ export async function joinSpectators(lobby, uuid, username) {
   }
 }
 
-/**
- *  Delete player from lobby in database
- *  ==> Functional Requirements: FR8
- */
 export async function leaveLobby(lobby, uuid) {
   if (lobby == null) {
     return;
@@ -483,10 +517,6 @@ export async function leaveLobby(lobby, uuid) {
 }
 
 // Game communications
-/**
- *  Update player's board in database
- *  ==> Functional Requirements: FR14, FR16, FR17, FR18, FR19, FR20
- */
 export async function updateBoard(lobby, uuid, board) {
   const docRef = doc(db, "lobby", lobby.uuid);
   let uField = "playerBoards." + uuid;
@@ -499,10 +529,6 @@ export async function updateBoard(lobby, uuid, board) {
   }
 }
 
-/**
- *  Update player's score in database
- *  ==> Functional Requirements: FR26
- */
 export async function updateScore(lobby, uuid, score) {
   if (typeof score !== "number") {
     throw new Error("score is not a number");
@@ -519,10 +545,6 @@ export async function updateScore(lobby, uuid, score) {
   }
 }
 
-/**
- *  Pop a pending incompleted row from database
- *  ==> Functional Requirements: FR27
- */
 export async function popPendingRows(lobby, myUuid, rowsCount) {
   const docRef = doc(db, "lobby", lobby.uuid);
   let uField = "playerPendingRows." + myUuid;
@@ -535,10 +557,6 @@ export async function popPendingRows(lobby, myUuid, rowsCount) {
   }
 }
 
-/**
- *  Push a pending incompleted row to database
- *  ==> Functional Requirements: FR27
- */
 export async function pushPendingRows(lobby, userUuid, rowsCount) {
   const docRef = doc(db, "lobby", lobby.uuid);
   let uField = "playerPendingRows." + userUuid;
@@ -551,10 +569,6 @@ export async function pushPendingRows(lobby, userUuid, rowsCount) {
   }
 }
 
-/**
- *  Update size of pending shape
- *  ==> Functional Requirements: FR23, FR24, FR25
- */
 export async function setPendingShapesSize(lobby, userUuid, pendingShapesSize) {
   const docRef = doc(db, "lobby", lobby.uuid);
   let uField = "playerPendingShapesSize." + userUuid;
@@ -567,10 +581,6 @@ export async function setPendingShapesSize(lobby, userUuid, pendingShapesSize) {
   }
 }
 
-/**
- *  Pop a pending shape from database
- *  ==> Functional Requirements: FR23, FR25
- */
 export async function popPendingShapes(lobby, myUuid) {
   const docRef = doc(db, "lobby", lobby.uuid);
   let uField = "playerPendingShapes." + myUuid;
@@ -583,10 +593,6 @@ export async function popPendingShapes(lobby, myUuid) {
   }
 }
 
-/**
- *  Push a pending shape to database
- *  ==> Functional Requirements: FR23, FR24, FR25
- */
 export async function pushPendingShapes(lobby, userUuid, shape) {
   const docRef = doc(db, "lobby", lobby.uuid);
   let uField = "playerPendingShapes." + userUuid;
@@ -599,10 +605,6 @@ export async function pushPendingShapes(lobby, userUuid, shape) {
   }
 }
 
-/**
- *  Pop multiple pending shapes from database
- *  ==> Functional Requirements: FR23, FR25
- */
 export async function popShapeQueue(lobby, userUuid, poppedShapesCount) {
   const docRef = doc(db, "lobby", lobby.uuid);
   const lobbyDoc = await getDoc(docRef);
@@ -618,10 +620,6 @@ export async function popShapeQueue(lobby, userUuid, poppedShapesCount) {
   }
 }
 
-/**
- *  Read side of current player shape queue
- *  ==> Functional Requirements: FR24, FR25
- */
 export async function getShapeQueueSize(lobby, userUuid) {
   const docRef = doc(db, "lobby", lobby.uuid);
   const lobbyDoc = await getDoc(docRef);
@@ -629,10 +627,6 @@ export async function getShapeQueueSize(lobby, userUuid) {
   return shapeQueueSize
 }
 
-/**
- *  Update player status to ongoing in lobby for individual game
- *  ==> Functional Requirements: FR12
- */
 export async function startPlayerIndividualGame(lobby, playerUuid) {
   const docRef = doc(db, "lobby", lobby.uuid);
   let uField = "players." + playerUuid + ".status";
@@ -645,10 +639,6 @@ export async function startPlayerIndividualGame(lobby, playerUuid) {
   }
 }
 
-/**
- *  Update player status to end in lobby for individual game
- *  ==> Functional Requirements: FR21, FR22
- */
 export async function endPlayerIndividualGame(lobby, playerUuid) {
   const docRef = doc(db, "lobby", lobby.uuid);
   let uField = "players." + playerUuid + ".status";
@@ -661,10 +651,6 @@ export async function endPlayerIndividualGame(lobby, playerUuid) {
   }
 }
 
-/**
- *  Check if a game is finished
- *  ==> Functional Requirements: FR21, FR22
- */
 export async function isGameFinished(lobby) {
   const lobbyRef = doc(db, "lobby", lobby.uuid);
   const lobbyDoc = await getDoc(lobbyRef);
@@ -682,10 +668,6 @@ export async function isGameFinished(lobby) {
 }
 
 // Lobby status
-/**
- *  Update lobby status to open
- *  ==> Functional Requirements: FR8, FR10, FR11
- */
 export async function openLobby(lobby) {
   const lobbyRef = doc(db, "lobby", lobby.uuid);
   try {
@@ -697,10 +679,6 @@ export async function openLobby(lobby) {
   }
 }
 
-/**
- *  Update lobby status to full
- *  ==> Functional Requirements: FR10, FR11
- */
 export async function fullLobby(lobby) {
   const lobbyRef = doc(db, "lobby", lobby.uuid);
   try {
@@ -712,10 +690,6 @@ export async function fullLobby(lobby) {
   }
 }
 
-/**
- *  Update lobby status to ongoing
- *  ==> Functional Requirements: FR12
- */
 export async function startGameForLobby(lobby) {
   const lobbyRef = doc(db, "lobby", lobby.uuid);
   try {
@@ -727,10 +701,6 @@ export async function startGameForLobby(lobby) {
   }
 }
 
-/**
- *  Update lobby status to end
- *  ==> Functional Requirements: FR22
- */
 export async function endGameForLobby(lobby) {
   const lobbyRef = doc(db, "lobby", lobby.uuid);
   try {
@@ -742,10 +712,6 @@ export async function endGameForLobby(lobby) {
   }
 }
 
-/**
- *  Add lobby invites to user
- *  ==> Functional Requirements: FR9
- */
 export async function inviteFriendToLobby(friendUuid, lobbyCode) {
   if (typeof friendUuid !== "string") {
     throw new Error("invalid friendUuid type");
@@ -761,10 +727,6 @@ export async function inviteFriendToLobby(friendUuid, lobbyCode) {
   }
 }
 
-/**
- *  Remove lobby invites to user
- *  ==> Functional Requirements: FR9
- */
 export async function removeLobbyInvite(user, lobbyCode) {
   if (typeof lobbyCode !== "string") {
     throw new Error("invalid lobbyCode type");
