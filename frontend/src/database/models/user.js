@@ -131,6 +131,10 @@ export class User {
     );
   }
 
+  /**
+   *  Convert local storage data to User class
+   *  ==> Functional Requirements: FR2
+   */
   static fromJson(json) {
     return Object.assign(new User(), json);
   }
@@ -199,18 +203,18 @@ export async function getUser(uuid) {
  *  Update user highest score in database
  *  ==> Functional Requirements: FR6, FR22
  */
-export async function updateHighScore(user) {
-  if (!(user instanceof User)) {
-    throw new Error("user is not an instance of User class");
-  }
-
-  const docRef = doc(db, "user", user.uuid);
-  try {
-    await updateDoc(docRef, {
-      high_score: user.highScore,
-    });
-  } catch (e) {
-    throw e;
+export async function updateHighScore(userUuid, newHighScore) {
+  const docRef = doc(db, "user", userUuid);
+  const userDoc = await getDoc(docRef);
+  const currentHighScore = userDoc.data()?.high_score;
+  if (newHighScore > currentHighScore) {
+    try {
+      await updateDoc(docRef, {
+        high_score: newHighScore,
+      });
+    } catch (e) {
+      throw e;
+    }
   }
 }
 

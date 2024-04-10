@@ -236,6 +236,14 @@ export class Lobby {
     }
     return null;
   }
+
+   /**
+   *  Convert local storage data to Lobby class
+   *  ==> Functional Requirements: FR8
+   */
+  static fromJson(json) {
+    return Object.assign(new Lobby, json);
+  }
 }
 
 // Lobby actions
