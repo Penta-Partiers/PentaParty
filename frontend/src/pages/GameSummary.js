@@ -10,7 +10,7 @@ import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 
 // Database
 import { deleteLobby } from "../database/models/lobby";
-import { updateHighScore } from "../database/models/user";
+import { getUser, updateHighScore } from "../database/models/user";
 
 // User Context
 import { Context } from "../auth/AuthContext";
@@ -25,7 +25,7 @@ import { compareScores } from "../util/util";
  * ==> Functional requirement: FR22
  */
 export default function GameSummary() {
-    const { lobby, isHost } = useContext(Context);
+    const { userDb, setUserDb, lobby, isHost } = useContext(Context);
 
     const [scoresList, setScoresList] = useState(null);
     const [winningPlayers, setWinningPlayers] = useState(null);
@@ -82,6 +82,8 @@ export default function GameSummary() {
         if (isHost === "true") {
             await deleteLobby(lobby);
         }
+        let updatedUser = await getUser(userDb.uuid);
+        setUserDb(updatedUser);
         localStorage.setItem("lobby", null);
         localStorage.setItem("isHost", "false");
         navigate("/home");
