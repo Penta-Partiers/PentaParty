@@ -2,7 +2,8 @@
 By Aaron Lin, Alphonso Dineros, and Mark Zhang
 
 ## Running Instructions
-### 1. Firebase Setup
+For the **TA marking team**, we have included our .env file, which contains the Firebase API and credentials to run this program. Therefore, the step on "Firebase Setup" can be skipped. Please start directly from step 2 "Front End Setup".
+### 1. Firebase Setup (Not for TA marking team)
 1. Go to [Google Firebase](https://firebase.google.com/) and register a new account
 2. Add a new Firebase project
 3. On project overview page, add a new Web App. The button to add a Web App is on the right of the Andriod icon, which has a icon of "<\\>"
