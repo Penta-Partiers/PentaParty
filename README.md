@@ -8,7 +8,7 @@ Before running our project for the first time, perform the following setup steps
 - Download the latest version of node.js: https://nodejs.org/en
 
 ### Note
-For the **TA marking team**, we have included our `.env` file, which contains the Firebase API and credentials to run this program. Therefore, the step on "Firebase Setup" can be skipped. Please start directly from step 2 "Front End Setup".
+For the **TA marking team**, we have included our `.env` file, which contains the Firebase API and credentials to run this program. Therefore, the step on "Firebase Setup" can be skipped. Please start directly from step "Front End Setup".
 
 ### 2. Firebase Setup (Not for TA marking team)
 1. Go to [Google Firebase](https://firebase.google.com/) and register a new account
